@@ -1,6 +1,7 @@
 import {
   DeleteObjectCommand,
   GetObjectCommand,
+  HeadBucketCommand,
   HeadObjectCommand,
   PutObjectCommand,
   S3Client,
@@ -51,6 +52,15 @@ const statusOf = (error: unknown): number | undefined =>
     ? error.$metadata.httpStatusCode
     : undefined;
 
+/**
+ * A 404 means "no such document" only when the bucket itself exists. A deleted or misnamed
+ * bucket also answers 404, and reporting that as a missing document would hide a broken store
+ * behind an empty brain.
+ */
+const isMissingObject = (error: unknown): boolean =>
+  statusOf(error) === HTTP_NOT_FOUND &&
+  !(error instanceof S3ServiceException && error.name === "NoSuchBucket");
+
 export const s3ReadDocument = async (
   key: string
 ): Promise<
@@ -69,7 +79,7 @@ export const s3ReadDocument = async (
       uploadedAt: (result.LastModified ?? new Date()).toISOString(),
     };
   } catch (error) {
-    if (statusOf(error) === HTTP_NOT_FOUND) {
+    if (isMissingObject(error)) {
       return { found: false };
     }
     throw error;
@@ -108,10 +118,12 @@ export const s3DeleteDocument = async (
   try {
     await s3().send(new HeadObjectCommand({ Bucket: bucket(), Key: key }));
   } catch (error) {
-    if (statusOf(error) === HTTP_NOT_FOUND) {
-      return { existed: false };
+    if (statusOf(error) !== HTTP_NOT_FOUND) {
+      throw error;
     }
-    throw error;
+    // A HEAD 404 has no body to name the cause, so confirm the bucket before calling it missing.
+    await s3().send(new HeadBucketCommand({ Bucket: bucket() }));
+    return { existed: false };
   }
   await s3().send(new DeleteObjectCommand({ Bucket: bucket(), Key: key }));
   return { existed: true };

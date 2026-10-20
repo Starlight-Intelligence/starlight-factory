@@ -52,8 +52,11 @@ The Vercel variables must also be present at build time: `eve build` prepares th
 
 ```bash
 curl https://<your-railway-domain>/eve/v1/health
-eve remote connect --url https://<your-railway-domain>
+BASIC=$(printf '%s' "factory:$FACTORY_ROUTE_PASSWORD" | base64)
+eve remote connect --url https://<your-railway-domain> --header "Authorization: Basic $BASIC"
 ```
+
+`eve remote connect` has no password prompt for Basic auth, so pass the header. Without it every session request returns 401.
 
 Then label an issue `factory` on `FACTORY_REPO`. The run should end in a draft pull request.
 
