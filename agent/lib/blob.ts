@@ -1,4 +1,10 @@
 import { BlobNotFoundError, del, get, head, put } from "@vercel/blob";
+import { onRailway } from "./platform.js";
+import {
+  s3DeleteDocument,
+  s3ReadDocument,
+  s3WriteDocument,
+} from "./s3-store.js";
 
 /**
  * The factory's shared Blob layer: the reserved-namespace registry and the document helpers
@@ -153,6 +159,9 @@ export const readDocument = async (
 ): Promise<
   { found: false } | { content: string; found: true; uploadedAt: string }
 > => {
+  if (onRailway) {
+    return s3ReadDocument(key);
+  }
   const result = await get(key, { access: "public" });
   if (!result?.stream) {
     return { found: false };
@@ -179,17 +188,22 @@ export const readDocument = async (
  * @param options - Whether an existing document at the key may be replaced.
  * @returns The stored blob's metadata (callers report `pathname`).
  */
-export const writeDocument = (
+export const writeDocument = async (
   key: string,
   contents: string,
   options: { allowOverwrite: boolean }
-) =>
-  put(key, contents, {
+): Promise<{ pathname: string }> => {
+  if (onRailway) {
+    return s3WriteDocument(key, contents, options);
+  }
+  const blob = await put(key, contents, {
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: options.allowOverwrite,
     contentType: "text/markdown",
   });
+  return { pathname: blob.pathname };
+};
 
 /**
  * Delete a document from the store by its exact key.
@@ -204,6 +218,9 @@ export const writeDocument = (
 export const deleteDocument = async (
   key: string
 ): Promise<{ existed: boolean }> => {
+  if (onRailway) {
+    return s3DeleteDocument(key);
+  }
   try {
     await head(key);
   } catch (error) {

@@ -1,5 +1,12 @@
-import { type AuthFn, localDev, vercelOidc } from "eve/channels/auth";
+import {
+  type AuthFn,
+  httpBasic,
+  localDev,
+  vercelOidc,
+} from "eve/channels/auth";
 import { eveChannel } from "eve/channels/eve";
+import { requireEnv } from "../lib/constants.js";
+import { onRailway } from "../lib/platform.js";
 
 const localDevAuth = localDev();
 
@@ -19,4 +26,20 @@ const localDevUser: AuthFn<Request> = async (request) => {
   return local ? { ...local, principalType: "user" } : null;
 };
 
-export default eveChannel({ auth: [localDevUser, vercelOidc()] });
+/**
+ * Production route auth: Vercel OIDC on Vercel. Railway has no platform identity token, so the
+ * route takes HTTP Basic credentials the deployer sets (`eve remote connect` and any operator
+ * client send them); channel webhooks are unaffected, since each channel verifies its own
+ * signatures.
+ */
+const productionAuth = onRailway
+  ? httpBasic(
+      {
+        password: requireEnv("FACTORY_ROUTE_PASSWORD", "a long random string"),
+        username: process.env.FACTORY_ROUTE_USER ?? "factory",
+      },
+      { realm: "starlight-factory" }
+    )
+  : vercelOidc();
+
+export default eveChannel({ auth: [localDevUser, productionAuth] });
