@@ -32,10 +32,22 @@ const localDevUser: AuthFn<Request> = async (request) => {
  * client send them); channel webhooks are unaffected, since each channel verifies its own
  * signatures.
  */
+const MIN_ROUTE_PASSWORD_LENGTH = 24;
+
+const routePassword = (): string => {
+  const password = requireEnv("FACTORY_ROUTE_PASSWORD", "a long random string");
+  if (password.length < MIN_ROUTE_PASSWORD_LENGTH) {
+    throw new Error(
+      `FACTORY_ROUTE_PASSWORD must be at least ${MIN_ROUTE_PASSWORD_LENGTH} characters; scripts/create-github-app.mjs generates one.`
+    );
+  }
+  return password;
+};
+
 const productionAuth = onRailway
   ? httpBasic(
       {
-        password: requireEnv("FACTORY_ROUTE_PASSWORD", "a long random string"),
+        password: routePassword(),
         username: process.env.FACTORY_ROUTE_USER ?? "factory",
       },
       { realm: "starlight-factory" }

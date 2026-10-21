@@ -105,6 +105,43 @@ test("stops reading a body that exceeds the limit, declared or streamed", async 
   assert.equal(await readBodyWithin(streamed, 10), null);
 });
 
+test("reassembles many tiny chunks into one body, skipping empty ones", async () => {
+  const count = 10_000;
+  const streamed = new Request("https://x.test/", {
+    body: new ReadableStream({
+      start(controller) {
+        for (let i = 0; i < count; i += 1) {
+          controller.enqueue(Uint8Array.of(i % 256));
+          controller.enqueue(new Uint8Array(0));
+        }
+        controller.close();
+      },
+    }),
+    duplex: "half",
+    method: "POST",
+  } as RequestInit);
+  const body = await readBodyWithin(streamed, 2 * 1024 * 1024);
+  assert.ok(body);
+  assert.equal(body.byteLength, count);
+  assert.equal(body[257], 1);
+});
+
+test("returns the 413 result even when cancelling the stream fails", async () => {
+  const stubborn = new Request("https://x.test/", {
+    body: new ReadableStream({
+      cancel() {
+        throw new Error("cancel refused");
+      },
+      pull(controller) {
+        controller.enqueue(new Uint8Array(8));
+      },
+    }),
+    duplex: "half",
+    method: "POST",
+  } as RequestInit);
+  assert.equal(await readBodyWithin(stubborn, 20), null);
+});
+
 test("measures the full queue envelope, not just the body", () => {
   const delivery = captureDelivery(githubHeaders(WELL_FORMED));
   assert.ok(delivery);

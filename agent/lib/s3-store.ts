@@ -8,6 +8,7 @@ import {
   S3ServiceException,
 } from "@aws-sdk/client-s3";
 import { requireEnv } from "./constants.js";
+import { DocumentExistsError } from "./document-errors.js";
 
 /**
  * The document store on Railway: a private, S3-compatible Railway Bucket.
@@ -103,9 +104,7 @@ export const s3WriteDocument = async (
     );
   } catch (error) {
     if (statusOf(error) === HTTP_PRECONDITION_FAILED) {
-      throw new Error(`A document already exists at ${key}.`, {
-        cause: error,
-      });
+      throw new DocumentExistsError(key, { cause: error });
     }
     throw error;
   }

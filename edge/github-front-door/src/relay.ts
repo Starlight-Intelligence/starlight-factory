@@ -66,6 +66,13 @@ export const captureDelivery = (headers: Headers): Delivery | null => {
   return { headers: kept, id };
 };
 
+const INITIAL_BUFFER_BYTES = 16 * 1024;
+
+/** Best-effort cleanup that can neither throw nor hold the response back. */
+const discard = (pending: Promise<unknown> | undefined): void => {
+  pending?.catch(() => undefined);
+};
+
 /**
  * Reads at most `limit` bytes of a request body, stopping as soon as it would exceed it, so an
  * oversized body is refused without being buffered. `null` means too large.
@@ -76,43 +83,49 @@ export const readBodyWithin = async (
 ): Promise<Uint8Array | null> => {
   const declared = Number(request.headers.get("content-length") ?? "0");
   if (declared > limit) {
+    discard(request.body?.cancel());
     return null;
   }
   if (!request.body) {
     return new Uint8Array();
   }
-  const chunks = await readChunks(request.body.getReader(), limit, [], 0);
-  if (!chunks) {
-    return null;
+  // One contiguous buffer, grown by doubling, holds the body: memory stays proportional to the
+  // bytes received however the sender slices them into chunks.
+  let buffer = new Uint8Array(
+    Math.min(Math.max(declared, INITIAL_BUFFER_BYTES), limit)
+  );
+  let length = 0;
+  const reader = request.body.getReader();
+  try {
+    for (;;) {
+      // biome-ignore lint/performance/noAwaitInLoops: each read depends on the stream position of the last
+      const { done, value } = await reader.read();
+      if (done) {
+        return buffer.subarray(0, length);
+      }
+      if (value.byteLength === 0) {
+        continue;
+      }
+      if (length + value.byteLength > limit) {
+        discard(reader.cancel());
+        return null;
+      }
+      if (length + value.byteLength > buffer.byteLength) {
+        const grown = new Uint8Array(
+          Math.min(
+            Math.max(buffer.byteLength * 2, length + value.byteLength),
+            limit
+          )
+        );
+        grown.set(buffer.subarray(0, length));
+        buffer = grown;
+      }
+      buffer.set(value, length);
+      length += value.byteLength;
+    }
+  } finally {
+    reader.releaseLock();
   }
-  const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
-  const body = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return body;
-};
-
-// Stream reads are sequential by nature; recursion keeps each read after the previous one.
-const readChunks = async (
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  limit: number,
-  chunks: Uint8Array[],
-  total: number
-): Promise<Uint8Array[] | null> => {
-  const { done, value } = await reader.read();
-  if (done) {
-    return chunks;
-  }
-  const next = total + value.byteLength;
-  if (next > limit) {
-    await reader.cancel();
-    return null;
-  }
-  chunks.push(value);
-  return readChunks(reader, limit, chunks, next);
 };
 
 /** UTF-8 size of the queue message as Cloudflare Queues will serialize it. */

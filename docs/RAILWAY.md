@@ -63,7 +63,8 @@ Then label an issue `factory` on `FACTORY_REPO`. The run should end in a draft p
 ## Faster setup
 
 - `railway config plan` previews the whole project from `.railway/railway.ts` (service, volume at `/app/.eve/.workflow-data`, bucket wired to the `S3_*` variables, every variable the factory reads declared and preserved, so `apply` never deletes one you set); `railway config apply` creates it. Needs Railway CLI 5.42.1 or newer and a linked project.
-- `node scripts/create-github-app.mjs --owner <org> --webhook https://<domain>/eve/v1/github` creates the GitHub App with the right permissions and writes its id, slug, key and webhook secret, plus a random `FACTORY_ROUTE_PASSWORD`, to `.env.railway.local`. The file is git-ignored, created only if it doesn't exist, and readable only by you (owner-only ACL on Windows, mode 600 elsewhere). Copy the values into Railway from there.
+- `node scripts/create-github-app.mjs --owner <org> --webhook https://<domain>/eve/v1/github` creates the GitHub App with the right permissions and writes its id, slug, key and webhook secret, plus a random `FACTORY_ROUTE_PASSWORD`, to `~/.starlight-factory/starlight-factory.env`. That directory is made readable only by you before anything is written (owner-only ACL on Windows, mode 700 elsewhere); the file is created only if it doesn't exist, and `--out` refuses any path git would track. Copy the values into Railway from there.
+- `FACTORY_ROUTE_PASSWORD` must be at least 24 characters, or the factory refuses to start.
 
 ## Optional: Cloudflare
 
@@ -74,6 +75,8 @@ Each piece is independent; use none, some or all.
 - **GitHub front door** (`edge/github-front-door`). GitHub never redelivers a failed webhook, so a factory that is restarting or down loses the label that should have started a run. This Worker verifies the signature at the edge, queues the delivery, and replays it byte for byte until the factory accepts it, with backoff up to 30 minutes and a dead-letter queue. Point the GitHub App's webhook at the Worker instead of Railway. It needs Cloudflare Queues (Workers Paid). Linear is not routed through it because eve rejects Linear deliveries whose timestamp is stale.
 
 ## Known gaps
+
+- Each GitHub event that starts a session is claimed once in the store, keyed on its signed content, so a replay can't start a second run. When the store can't answer, the event is skipped rather than risked, and a crash between claim and session start also skips it: re-apply the label to retry. eve answers GitHub before a hook runs, so neither case can ask GitHub to resend. A durable inbox that closes both is S2 work.
 
 - Sandboxes are rented from Vercel, so a Railway deployment still needs a Vercel account. A custom eve sandbox provider for another firewall-capable host would remove it.
 - The local Workflow world runs on one replica. Scaling past one instance needs a shared Workflow world, for example on Postgres.

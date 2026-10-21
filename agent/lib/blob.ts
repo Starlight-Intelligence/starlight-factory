@@ -1,4 +1,12 @@
-import { BlobNotFoundError, del, get, head, put } from "@vercel/blob";
+import {
+  BlobNotFoundError,
+  BlobPreconditionFailedError,
+  del,
+  get,
+  head,
+  put,
+} from "@vercel/blob";
+import { DocumentExistsError } from "./document-errors.js";
 import { onRailway } from "./platform.js";
 import {
   s3DeleteDocument,
@@ -204,13 +212,23 @@ export const writeDocument = async (
   if (onRailway) {
     return s3WriteDocument(key, contents, options);
   }
-  const blob = await put(key, contents, {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: options.allowOverwrite,
-    contentType: "text/markdown",
-  });
-  return { pathname: blob.pathname };
+  try {
+    const blob = await put(key, contents, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: options.allowOverwrite,
+      contentType: "text/markdown",
+    });
+    return { pathname: blob.pathname };
+  } catch (error) {
+    if (
+      !options.allowOverwrite &&
+      error instanceof BlobPreconditionFailedError
+    ) {
+      throw new DocumentExistsError(key, { cause: error });
+    }
+    throw error;
+  }
 };
 
 /**

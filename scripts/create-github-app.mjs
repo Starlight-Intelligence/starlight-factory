@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Creates the factory's GitHub App through GitHub's manifest flow and writes its credentials to a
-// git-ignored env file, so the private key goes from GitHub to your disk and nowhere else.
+// Creates the factory's GitHub App through GitHub's manifest flow and writes its credentials to
+// ~/.starlight-factory/<name>.env, a directory only you can read, so the private key goes from
+// GitHub to your disk and nowhere else.
 //
 //   node scripts/create-github-app.mjs --owner <org-or-user> --webhook https://<domain>/eve/v1/github
 //
@@ -11,14 +12,26 @@
 
 import { execFileSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { closeSync, existsSync, lstatSync, openSync, writeSync } from "node:fs";
+import {
+  chmodSync,
+  closeSync,
+  existsSync,
+  linkSync,
+  lstatSync,
+  mkdirSync,
+  openSync,
+  unlinkSync,
+  writeSync,
+} from "node:fs";
 import { createServer } from "node:http";
+import { homedir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 
 const { values } = parseArgs({
   options: {
     name: { default: "starlight-factory", type: "string" },
-    out: { default: ".env.railway.local", type: "string" },
+    out: { type: "string" },
     owner: { type: "string" },
     port: { default: "3918", type: "string" },
     webhook: { type: "string" },
@@ -27,23 +40,62 @@ const { values } = parseArgs({
 
 if (!(values.owner && values.webhook)) {
   console.error(
-    "Usage: node scripts/create-github-app.mjs --owner <org-or-user> --webhook https://<domain>/eve/v1/github"
+    "Usage: node scripts/create-github-app.mjs --owner <org-or-user> --webhook https://<domain>/eve/v1/github [--out <file>]"
   );
   process.exit(2);
 }
 
-// Refuse up front, before an app exists, rather than after GitHub has handed over a key.
-const outExists = (() => {
+// Credentials live outside any checkout by default, in a directory only you can read.
+const PRIVATE_DIR = join(homedir(), ".starlight-factory");
+const out = resolve(values.out ?? join(PRIVATE_DIR, `${values.name}.env`));
+
+const pathExists = (path) => {
   try {
-    lstatSync(values.out);
+    lstatSync(path);
     return true;
   } catch {
-    return existsSync(values.out);
+    return existsSync(path);
   }
-})();
-if (outExists) {
+};
+
+const nearestExistingDir = (path) => {
+  let dir = dirname(path);
+  while (!existsSync(dir) && dirname(dir) !== dir) {
+    dir = dirname(dir);
+  }
+  return dir;
+};
+
+/** True when git would track `path`: inside a work tree and not ignored. */
+const gitWouldTrack = (path) => {
+  const dir = nearestExistingDir(path);
+  try {
+    execFileSync("git", ["-C", dir, "rev-parse", "--is-inside-work-tree"], {
+      stdio: "ignore",
+    });
+  } catch {
+    return false;
+  }
+  try {
+    execFileSync("git", ["-C", dir, "check-ignore", "-q", path], {
+      stdio: "ignore",
+    });
+    return false;
+  } catch {
+    return true;
+  }
+};
+
+// Refuse up front, before an app exists, rather than after GitHub has handed over a key.
+if (pathExists(out)) {
   console.error(
-    `${values.out} already exists. Move it away or pass --out <new file>; this script never overwrites credentials.`
+    `${out} already exists. Move it away or pass --out <new file>; this script never overwrites credentials.`
+  );
+  process.exit(1);
+}
+if (gitWouldTrack(out)) {
+  console.error(
+    `${out} is inside a git work tree and not ignored, so the key could be committed. Pick a path outside the checkout or one .gitignore covers.`
   );
   process.exit(1);
 }
@@ -121,25 +173,61 @@ const page = `<!doctype html><meta charset="utf-8"><title>Create the factory Git
 </form></body>`;
 
 /**
- * Creates the file exclusively (never follows or replaces an existing path), restricts it to the
- * current user before any secret is written, then writes. On Windows the POSIX mode is ignored, so
- * the ACL is set explicitly with icacls.
+ * Makes PRIVATE_DIR readable by the current user only, before anything is written into it. A file
+ * created inside then starts out private, so there is no moment when another account could open
+ * it. Runs at startup, so a failure costs nothing: no app exists yet.
+ */
+const ensurePrivateDir = () => {
+  mkdirSync(PRIVATE_DIR, { mode: 0o700, recursive: true });
+  if (process.platform === "win32") {
+    execFileSync(
+      "icacls",
+      [
+        PRIVATE_DIR,
+        "/inheritance:r",
+        "/grant:r",
+        `${process.env.USERNAME}:(OI)(CI)F`,
+      ],
+      { stdio: "ignore" }
+    );
+  } else {
+    chmodSync(PRIVATE_DIR, 0o700);
+  }
+};
+
+/**
+ * Writes the secrets into a fresh file inside PRIVATE_DIR, then hard-links it to `path`. Linking
+ * fails if `path` already exists, so nothing is ever replaced, and the linked name is the same
+ * private file, never a copy with looser permissions.
  */
 const writePrivateFile = (path, contents) => {
-  const fd = openSync(path, "wx", 0o600);
+  const staged = join(PRIVATE_DIR, `.${randomBytes(8).toString("hex")}.tmp`);
+  const fd = openSync(staged, "wx", 0o600);
   try {
-    if (process.platform === "win32") {
-      execFileSync(
-        "icacls",
-        [path, "/inheritance:r", "/grant:r", `${process.env.USERNAME}:F`],
-        { stdio: "ignore" }
-      );
-    }
     writeSync(fd, contents);
   } finally {
     closeSync(fd);
   }
+  try {
+    linkSync(staged, path);
+  } catch (error) {
+    // The app already exists, so keep the private copy rather than lose the key.
+    console.error(
+      `Could not place the credentials at ${path} (${error.code ?? error.name}). They are in ${staged}, readable only by you.`
+    );
+    throw error;
+  }
+  unlinkSync(staged);
 };
+
+try {
+  ensurePrivateDir();
+} catch (error) {
+  console.error(
+    `Could not make ${PRIVATE_DIR} private (${error.code ?? error.name}). Nothing was created.`
+  );
+  process.exit(1);
+}
 
 let claimed = false;
 
@@ -168,7 +256,7 @@ const handleCallback = async (url, res) => {
   }
   const app = await conversion.json();
   writePrivateFile(
-    values.out,
+    out,
     [
       "FACTORY_PLATFORM=railway",
       `FACTORY_ROUTE_PASSWORD=${randomBytes(24).toString("base64url")}`,
@@ -183,11 +271,11 @@ const handleCallback = async (url, res) => {
   send(
     res,
     200,
-    `<body style="font:16px system-ui;max-width:40rem;margin:4rem auto"><h1>Created ${escapeHtml(app.slug)}</h1><p>Credentials and a route password are in <code>${escapeHtml(values.out)}</code>. Now install the app on your FACTORY_REPO:</p><p><a href="${escapeHtml(install)}">${escapeHtml(install)}</a></p></body>`,
+    `<body style="font:16px system-ui;max-width:40rem;margin:4rem auto"><h1>Created ${escapeHtml(app.slug)}</h1><p>Credentials and a route password are in <code>${escapeHtml(out)}</code>. Now install the app on your FACTORY_REPO:</p><p><a href="${escapeHtml(install)}">${escapeHtml(install)}</a></p></body>`,
     "text/html; charset=utf-8"
   );
   console.log(
-    `Created ${app.slug}. Wrote ${values.out} (app id, slug, webhook secret, private key, route password). Install it: ${install}`
+    `Created ${app.slug}. Wrote ${out} (app id, slug, webhook secret, private key, route password). Install it: ${install}`
   );
   server.close();
 };
@@ -205,7 +293,8 @@ const server = createServer((req, res) => {
   }
   if (req.method === "GET" && url.pathname === "/callback") {
     handleCallback(url, res).catch((error) => {
-      console.error(`Setup failed: ${error.message}`);
+      // Name and code only: a message could carry part of what GitHub returned.
+      console.error(`Setup failed (${error.code ?? error.name}).`);
       process.exitCode = 1;
       send(res, 500, "Setup failed; see the terminal.");
       server.close();
