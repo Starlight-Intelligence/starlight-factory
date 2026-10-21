@@ -15,6 +15,7 @@ import { randomBytes } from "node:crypto";
 import {
   closeSync,
   existsSync,
+  fstatSync,
   fsyncSync,
   lstatSync,
   mkdirSync,
@@ -58,7 +59,14 @@ const pathExists = (path) => {
   }
 };
 
-const NOT_A_REPO = /not a git repository/i;
+// Only git's ordinary "searched upward and found nothing" answer counts as outside a repo. A
+// broken override (GIT_DIR pointing nowhere) prints "not a git repository: '<path>'" instead.
+const NOT_A_REPO = /not a git repository \(or any of the parent directories\)/i;
+
+// Run git with no GIT_* overrides from the caller's environment, so the answer is about the path.
+const gitEnv = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => !name.startsWith("GIT_"))
+);
 
 const nearestExistingDir = (path) => {
   let dir = dirname(path);
@@ -78,7 +86,7 @@ const gitWouldTrack = (path) => {
   const inside = spawnSync(
     "git",
     ["-C", dir, "rev-parse", "--is-inside-work-tree"],
-    { encoding: "utf8" }
+    { encoding: "utf8", env: gitEnv }
   );
   if (inside.error) {
     return true;
@@ -89,10 +97,26 @@ const gitWouldTrack = (path) => {
   if (inside.stdout.trim() !== "true") {
     return true;
   }
-  const ignored = spawnSync("git", ["-C", dir, "check-ignore", "-q", path]);
+  const ignored = spawnSync("git", ["-C", dir, "check-ignore", "-q", path], {
+    env: gitEnv,
+  });
   // 0: ignored. 1: not ignored. Anything else: git couldn't tell.
   return ignored.error !== undefined || ignored.status !== 0;
 };
+
+// A plain file path only: no NTFS alternate stream (file.txt:stream), which would inherit the
+// security of an existing file, and no device or \\?\ namespace.
+const WINDOWS_DRIVE_PATH = /^[A-Za-z]:\\[^:]*$/;
+const WINDOWS_UNC_PATH = /^\\\\[^\\?.][^:]*$/;
+if (
+  process.platform === "win32" &&
+  !(WINDOWS_DRIVE_PATH.test(out) || WINDOWS_UNC_PATH.test(out))
+) {
+  console.error(
+    `${out} is not a plain file path. Use a normal path without ':' after the drive letter.`
+  );
+  process.exit(1);
+}
 
 // Refuse up front, before an app exists, rather than after GitHub has handed over a key.
 if (pathExists(out)) {
@@ -216,11 +240,24 @@ const writePrivateFile = (path, contents) => {
   }
   const fd = openSync(path, "wx", 0o600);
   try {
+    // The requested mode is only a request: a FAT or network mount can ignore it. Check the file
+    // that was actually opened before any secret goes in.
+    const opened = fstatSync(fd);
+    // biome-ignore lint/suspicious/noBitwiseOperators: permission bits are a bitmask
+    const groupOrOtherAccess = opened.mode & 0o077;
+    if (opened.uid !== process.getuid() || groupOrOtherAccess !== 0) {
+      throw new Error(
+        "the destination filesystem does not keep the file private to you"
+      );
+    }
     writeSync(fd, contents);
     fsyncSync(fd);
-  } finally {
+  } catch (error) {
     closeSync(fd);
+    unlinkSync(path);
+    throw error;
   }
+  closeSync(fd);
 };
 
 // Prove the writer works before an app exists: a failure here costs nothing.
