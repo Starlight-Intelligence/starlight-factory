@@ -4,11 +4,14 @@ import {
   classifyOriginStatus,
   decodeDelivery,
   encodeDelivery,
+  encodedSize,
   forwardDelivery,
   GITHUB_PATH,
-  MAX_QUEUED_BODY_BYTES,
+  MAX_BODY_BYTES,
+  MAX_QUEUE_MESSAGE_BYTES,
   type OriginOutcome,
   type QueuedDelivery,
+  readBodyWithin,
   verifyGitHubSignature,
 } from "./relay.ts";
 
@@ -18,7 +21,8 @@ import {
  * GitHub never redelivers a failed webhook, so a factory that is restarting or down silently
  * loses the `factory` label that was supposed to start a run. This Worker answers GitHub at the
  * edge, holds each signed delivery in a Cloudflare Queue, and replays it byte for byte to the
- * factory until the factory takes it. The factory still verifies every signature itself.
+ * factory until the factory takes it. The factory still verifies every signature itself, and
+ * claims each delivery once (`agent/lib/deliveries.ts`), so a replay can't start a second run.
  *
  * Linear is deliberately not routed here: eve rejects Linear webhooks whose timestamp is stale,
  * so a delayed replay would be refused.
@@ -76,7 +80,10 @@ export default {
     if (!delivery) {
       return new Response("Not a signed GitHub webhook", { status: 400 });
     }
-    const body = new Uint8Array(await request.arrayBuffer());
+    const body = await readBodyWithin(request, MAX_BODY_BYTES);
+    if (!body) {
+      return new Response("Payload too large", { status: 413 });
+    }
     const signed = await verifyGitHubSignature(
       env.GITHUB_WEBHOOK_SECRET,
       body,
@@ -85,13 +92,16 @@ export default {
     if (!signed) {
       return new Response("Signature mismatch", { status: 401 });
     }
-    if (body.byteLength > MAX_QUEUED_BODY_BYTES) {
+    const queued = encodeDelivery(delivery, body);
+    if (encodedSize(queued) > MAX_QUEUE_MESSAGE_BYTES) {
       // Too large for a queue message: pass it straight through, and let a failure show as a
       // failed delivery in GitHub, where it can be redelivered by hand.
       const response = await forwardDelivery(env.ORIGIN_URL, delivery, body);
-      return new Response(null, { status: response.ok ? 202 : 502 });
+      return new Response(null, {
+        status: classifyOriginStatus(response.status) === "ack" ? 202 : 502,
+      });
     }
-    await env.GITHUB_DELIVERIES.send(encodeDelivery(delivery, body));
+    await env.GITHUB_DELIVERIES.send(queued);
     return new Response(null, { status: 202 });
   },
 

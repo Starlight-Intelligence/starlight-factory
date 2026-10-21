@@ -62,8 +62,8 @@ Then label an issue `factory` on `FACTORY_REPO`. The run should end in a draft p
 
 ## Faster setup
 
-- `railway config plan` previews the whole project from `.railway/railway.ts` (service, volume at `/app/.eve/.workflow-data`, bucket wired to the `S3_*` variables, a generated route password); `railway config apply` creates it. Needs Railway CLI 5.42.1 or newer and a linked project.
-- `node scripts/create-github-app.mjs --owner <org> --webhook https://<domain>/eve/v1/github` creates the GitHub App with the right permissions and writes its id, slug, key and webhook secret to `.env.railway.local` (git-ignored). Copy them into Railway from there.
+- `railway config plan` previews the whole project from `.railway/railway.ts` (service, volume at `/app/.eve/.workflow-data`, bucket wired to the `S3_*` variables, every variable the factory reads declared and preserved, so `apply` never deletes one you set); `railway config apply` creates it. Needs Railway CLI 5.42.1 or newer and a linked project.
+- `node scripts/create-github-app.mjs --owner <org> --webhook https://<domain>/eve/v1/github` creates the GitHub App with the right permissions and writes its id, slug, key and webhook secret, plus a random `FACTORY_ROUTE_PASSWORD`, to `.env.railway.local`. The file is git-ignored, created only if it doesn't exist, and readable only by you (owner-only ACL on Windows, mode 600 elsewhere). Copy the values into Railway from there.
 
 ## Optional: Cloudflare
 

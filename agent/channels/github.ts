@@ -5,6 +5,7 @@ import {
   githubChannel,
 } from "eve/channels/github";
 import { FACTORY_BRANCH_PREFIX, FACTORY_LABEL } from "../lib/constants.js";
+import { claimDelivery } from "../lib/deliveries.js";
 import { mentionPattern, resolveBotName } from "../lib/github/bot-name.js";
 import { githubCredentials } from "../lib/github/credentials.js";
 import { stampAutonomous, stampTrusted } from "../lib/trust.js";
@@ -198,7 +199,7 @@ const PR_SUMMARY_TASK = [
 export default githubChannel({
   botName: resolveBotName,
   credentials: githubCredentials,
-  onCheckSuite: (ctx, suite) => {
+  onCheckSuite: async (ctx, suite) => {
     const raw = suite.raw as {
       head_branch?: unknown;
       check_suite?: { head_branch?: unknown };
@@ -210,7 +211,8 @@ export default githubChannel({
       suite.conclusion !== "failure" ||
       pullNumber === undefined ||
       typeof headBranch !== "string" ||
-      !headBranch.startsWith(FACTORY_BRANCH_PREFIX)
+      !headBranch.startsWith(FACTORY_BRANCH_PREFIX) ||
+      !(await claimDelivery("check_suite", suite.raw))
     ) {
       return null;
     }
@@ -228,7 +230,8 @@ export default githubChannel({
     }
     return !isIgnoredComment(comment, botName) &&
       mentionPattern(botName).test(comment.body) &&
-      isTrustedCommenter(comment)
+      isTrustedCommenter(comment) &&
+      (await claimDelivery("comment", comment.raw))
       ? { auth: stampTrusted(defaultGitHubAuth(ctx)) }
       : null;
   },
@@ -243,7 +246,12 @@ export default githubChannel({
       issue.action !== "labeled" ||
       !hasFactoryLabel ||
       ctx.sender.type === "Bot" ||
-      !(await isTrustedLabeler(ctx))
+      !(await isTrustedLabeler(ctx)) ||
+      !(await claimDelivery("issue", {
+        action: issue.action,
+        issue: issue.raw,
+        sender: ctx.sender.login,
+      }))
     ) {
       return null;
     }
@@ -252,8 +260,10 @@ export default githubChannel({
       context: [FACTORY_INTAKE_TASK],
     };
   },
-  onPullRequest: (ctx, pullRequest) =>
-    pullRequest.action === "opened" && ctx.sender.type !== "Bot"
+  onPullRequest: async (ctx, pullRequest) =>
+    pullRequest.action === "opened" &&
+    ctx.sender.type !== "Bot" &&
+    (await claimDelivery("pull_request", pullRequest.raw))
       ? { auth: defaultGitHubAuth(ctx), context: [PR_SUMMARY_TASK] }
       : null,
 });

@@ -37,6 +37,9 @@ export const FACTORY_BRAIN_PREFIX = "factory-brain/";
 /** Blob path prefix holding handoff artifacts passed between stations. */
 export const ARTIFACTS_PREFIX = "artifacts/";
 
+/** Blob path prefix holding one write-once claim per webhook event the channel dispatched. */
+export const DELIVERY_CLAIMS_PREFIX = "deliveries/";
+
 /**
  * A Blob path prefix that a general-purpose Blob tool must not touch.
  *
@@ -65,6 +68,11 @@ const RESERVED_NAMESPACES: Readonly<Record<string, ReservedNamespace>> = {
     label: "handoff artifacts",
     readTool: "read_artifact",
     writeTool: "save_artifact",
+  },
+  [DELIVERY_CLAIMS_PREFIX]: {
+    label: "webhook delivery claims",
+    readTool: "the GitHub channel (no tool)",
+    writeTool: "the GitHub channel (no tool)",
   },
   [FACTORY_BRAIN_PREFIX]: {
     label: "the shared factory brain",

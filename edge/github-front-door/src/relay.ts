@@ -3,10 +3,23 @@
 export const GITHUB_PATH = "/eve/v1/github";
 
 /**
- * Cloudflare Queues caps a message at 128 KB. Bodies are stored base64 (4/3 larger) next to their
- * headers, so anything above this is forwarded straight through instead of queued.
+ * Cloudflare Queues caps a message at 128 KB. The whole encoded message (base64 body, headers,
+ * JSON framing) must fit under this, with room to spare; anything larger is forwarded straight
+ * through instead of queued.
  */
-export const MAX_QUEUED_BODY_BYTES = 90_000;
+export const MAX_QUEUE_MESSAGE_BYTES = 120 * 1024;
+
+/**
+ * Largest body the edge will read at all. GitHub's real webhook payloads sit far below this; the
+ * cap is there so an unauthenticated sender can't make the Worker buffer arbitrary bytes before
+ * the signature is checked.
+ */
+export const MAX_BODY_BYTES = 2 * 1024 * 1024;
+
+/** Each kept header is bounded too, so headers can't push an envelope past the queue limit. */
+const MAX_HEADER_BYTES = 1024;
+
+const SIGNATURE_SHAPE = /^sha256=[0-9a-f]{64}$/i;
 
 // Only what eve's GitHub channel reads. Nothing else from the edge request is replayed.
 const FORWARDED_HEADERS = [
@@ -36,16 +49,75 @@ export const captureDelivery = (headers: Headers): Delivery | null => {
   const kept: Record<string, string> = {};
   for (const name of FORWARDED_HEADERS) {
     const value = headers.get(name);
-    if (value !== null) {
-      kept[name] = value;
+    if (value === null) {
+      continue;
     }
+    if (value.length > MAX_HEADER_BYTES) {
+      return null;
+    }
+    kept[name] = value;
   }
   const id = kept["x-github-delivery"];
-  if (!(id && kept["x-github-event"] && kept["x-hub-signature-256"])) {
+  // A missing header tests as the string "undefined", which the shape check refuses.
+  const signature = String(kept["x-hub-signature-256"]);
+  if (!(id && kept["x-github-event"] && SIGNATURE_SHAPE.test(signature))) {
     return null;
   }
   return { headers: kept, id };
 };
+
+/**
+ * Reads at most `limit` bytes of a request body, stopping as soon as it would exceed it, so an
+ * oversized body is refused without being buffered. `null` means too large.
+ */
+export const readBodyWithin = async (
+  request: Request,
+  limit: number
+): Promise<Uint8Array | null> => {
+  const declared = Number(request.headers.get("content-length") ?? "0");
+  if (declared > limit) {
+    return null;
+  }
+  if (!request.body) {
+    return new Uint8Array();
+  }
+  const chunks = await readChunks(request.body.getReader(), limit, [], 0);
+  if (!chunks) {
+    return null;
+  }
+  const total = chunks.reduce((sum, chunk) => sum + chunk.byteLength, 0);
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return body;
+};
+
+// Stream reads are sequential by nature; recursion keeps each read after the previous one.
+const readChunks = async (
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  limit: number,
+  chunks: Uint8Array[],
+  total: number
+): Promise<Uint8Array[] | null> => {
+  const { done, value } = await reader.read();
+  if (done) {
+    return chunks;
+  }
+  const next = total + value.byteLength;
+  if (next > limit) {
+    await reader.cancel();
+    return null;
+  }
+  chunks.push(value);
+  return readChunks(reader, limit, chunks, next);
+};
+
+/** UTF-8 size of the queue message as Cloudflare Queues will serialize it. */
+export const encodedSize = (queued: QueuedDelivery): number =>
+  new TextEncoder().encode(JSON.stringify(queued)).byteLength;
 
 const toBase64 = (bytes: Uint8Array): string => {
   let binary = "";
@@ -121,15 +193,21 @@ export type OriginOutcome = "ack" | "retry" | "drop";
 const RETRYABLE_CLIENT_STATUSES = new Set([408, 425, 429]);
 
 /**
- * 2xx: delivered. 5xx and throttling: the origin is down or busy, try again. Any other 4xx: the
- * origin read the request and refused it (a bad signature, an unknown route), and replaying the
- * same bytes would only be refused again.
+ * 2xx: delivered. 3xx: redirects are never followed (a followed 302 can turn the POST into a GET
+ * that returns 200 without the webhook ever reaching eve), so they retry and end in the
+ * dead-letter queue if the origin keeps redirecting. 5xx and throttling: the origin is down or
+ * busy, try again. Any other 4xx: the origin read the request and refused it (a bad signature, an
+ * unknown route), and replaying the same bytes would only be refused again.
  */
 export const classifyOriginStatus = (status: number): OriginOutcome => {
   if (status >= 200 && status < 300) {
     return "ack";
   }
-  if (status >= 500 || RETRYABLE_CLIENT_STATUSES.has(status)) {
+  if (
+    (status >= 300 && status < 400) ||
+    status >= 500 ||
+    RETRYABLE_CLIENT_STATUSES.has(status)
+  ) {
     return "retry";
   }
   return "drop";
@@ -154,4 +232,5 @@ export const forwardDelivery = (
     body,
     headers: { ...delivery.headers, "x-starlight-front-door": "1" },
     method: "POST",
+    redirect: "manual",
   });

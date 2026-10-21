@@ -26,9 +26,9 @@ export type FactoryAgent = keyof typeof GATEWAY_IDS;
  *   gateway has authentication on.
  * - `direct`: the vendors' own APIs with the deployer's keys and nothing in between.
  *
- * The non-gateway routes strip the `<provider>/` prefix to get the vendor's model id, and the
- * deployer's `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` pay for the calls: the factory never holds
- * a shared key.
+ * The non-gateway routes translate each gateway id through `VENDOR_MODELS`, and the deployer's
+ * `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` pay for the calls: the factory never holds a shared
+ * key. The gateway's fast routing has no direct equivalent, so those routes run the base model.
  */
 const ROUTES = ["vercel-gateway", "cloudflare", "direct"] as const;
 type ModelRoute = (typeof ROUTES)[number];
@@ -58,10 +58,28 @@ const cloudflareHeaders = (): Record<string, string> | undefined => {
   return token ? { "cf-aig-authorization": `Bearer ${token}` } : undefined;
 };
 
+/**
+ * Gateway ids and vendor ids are not the same namespace: the gateway's `-fast` names are routing
+ * variants, not models a vendor API knows. Every gateway id the factory uses maps to the vendor's
+ * own id here (OpenAI lists `gpt-5.6-terra`, Anthropic `claude-fable-5`, both checked
+ * 2026-10-21), so a direct or Cloudflare route can't send an id the vendor rejects.
+ */
+const VENDOR_MODELS: Record<
+  string,
+  { readonly id: string; readonly vendor: "anthropic" | "openai" }
+> = {
+  "anthropic/claude-fable-5": { id: "claude-fable-5", vendor: "anthropic" },
+  "openai/gpt-5.6-terra-fast": { id: "gpt-5.6-terra", vendor: "openai" },
+};
+
 const providerModel = (gatewayId: string): LanguageModel => {
-  const slash = gatewayId.indexOf("/");
-  const vendor = gatewayId.slice(0, slash);
-  const modelId = gatewayId.slice(slash + 1);
+  const mapped = VENDOR_MODELS[gatewayId];
+  if (!mapped) {
+    throw new Error(
+      `MODEL_ROUTE=${MODEL_ROUTE} has no vendor id for '${gatewayId}'. Add it to VENDOR_MODELS in agent/lib/models.ts.`
+    );
+  }
+  const { id: modelId, vendor } = mapped;
   const viaCloudflare = MODEL_ROUTE === "cloudflare";
   if (vendor === "anthropic") {
     return createAnthropic(
@@ -83,9 +101,7 @@ const providerModel = (gatewayId: string): LanguageModel => {
         : {}
     )(modelId);
   }
-  throw new Error(
-    `MODEL_ROUTE=${MODEL_ROUTE} has no provider for '${gatewayId}'. Add one in agent/lib/models.ts or use the Vercel AI Gateway.`
-  );
+  throw new Error(`No provider is wired for vendor '${vendor}'.`);
 };
 
 const resolve = (gatewayId: string): string | LanguageModel =>
