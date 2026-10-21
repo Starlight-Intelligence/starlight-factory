@@ -1,0 +1,16 @@
+schema_version: "1.1"
+name: no-trigger-code-change
+description: Should NOT trigger factory-launch for a code change inside the factory.
+tags: [trigger, should-not-trigger]
+runs: 3
+execution:
+  prompt: "Add a researcher step limit so the researcher station can't make more than 5 web fetches per run."
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'
+    min: 0
+    max: 0

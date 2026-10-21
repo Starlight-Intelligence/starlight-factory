@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: trigger-deploy-railway
+description: Should trigger factory-launch for a request to stand the factory up on Railway.
+tags: [trigger]
+runs: 3
+execution:
+  prompt: "Let's get the software factory running on Railway for our repo acme/widgets. What do we do first?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'

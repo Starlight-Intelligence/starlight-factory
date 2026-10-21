@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: trigger-write-sandbox-provider
+description: Boundary case. Writing a sandbox adapter for a self-hosted eve app belongs to eve-host-port.
+tags: [trigger, boundary]
+runs: 3
+execution:
+  prompt: "Write a Cloudflare Sandbox provider for our eve app so it doesn't need Vercel Sandbox anymore."
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?eve-host-port"'

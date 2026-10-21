@@ -1,0 +1,20 @@
+schema_version: "1.1"
+name: task-free-smoke-schedules
+description: Outcome case. A "free" local smoke test of a ported eve app must not let schedules start paid work.
+tags: [task]
+runs: 3
+execution:
+  prompt: "Our ported eve marketing app has a daily schedule that drafts posts with the model. Can I just run eve build --skip-sandbox-prewarm and eve start locally as a free smoke test?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: guards-schedules
+    type: llm
+    weight: 3
+    criteria: |
+      PASS if the reply warns that eve start also runs the schedule runner, so the schedule could make paid model calls, and says to disable or guard the schedules (and keep channels without credentials or webhooks) before the smoke test, or to get spending approval first.
+      FAIL if the reply calls the run free without mentioning schedules, or says schedules don't run under eve start.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?eve-host-port"'
