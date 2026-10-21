@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: trigger-sandbox-error-deployed
+description: Boundary case. Diagnosing this deployed factory's sandbox error belongs to factory-launch, not eve-host-port.
+tags: [trigger, boundary]
+runs: 3
+execution:
+  prompt: "Our factory deploy on Railway fails during the build with a Vercel Sandbox authentication error. What's wrong?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'

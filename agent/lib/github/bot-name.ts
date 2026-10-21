@@ -1,4 +1,5 @@
 import { getConnectorMetadata } from "@vercel/connect";
+import { onRailway } from "../platform.js";
 import { GITHUB_CONNECTOR } from "./credentials.js";
 
 /**
@@ -41,6 +42,11 @@ export async function resolveBotName(): Promise<string> {
   const override = process.env.FACTORY_BOT_NAME ?? process.env.GITHUB_APP_SLUG;
   if (override) {
     return override;
+  }
+  if (onRailway) {
+    throw new Error(
+      "Set GITHUB_APP_SLUG to the GitHub App's slug; Railway deployments have no Connect metadata to read it from."
+    );
   }
   if (resolvedFromConnector !== undefined) {
     return resolvedFromConnector;

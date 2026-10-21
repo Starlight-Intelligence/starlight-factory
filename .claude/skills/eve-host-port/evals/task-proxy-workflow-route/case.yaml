@@ -1,0 +1,20 @@
+schema_version: "1.1"
+name: task-proxy-workflow-route
+description: Outcome case. Sessions start but stall behind a proxy; the answer must add the workflow callback route.
+tags: [task]
+runs: 3
+execution:
+  prompt: "Self-hosted eve behind Caddy. POST /eve/v1/session works and returns a session id, but the run never progresses. Caddy only forwards /eve/*. What's wrong?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: adds-workflow-route
+    type: llm
+    weight: 3
+    criteria: |
+      PASS if the reply says the proxy must ALSO forward /.well-known/workflow/ (unchanged, without rewriting the path) so eve's workflow callbacks reach the server.
+      FAIL if the reply says forwarding /eve/ alone is enough, tells the user not to forward /.well-known/workflow/, or blames something else without naming that route.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?eve-host-port"'

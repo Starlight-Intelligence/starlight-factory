@@ -1,4 +1,5 @@
 import { connect } from "@vercel/connect/eve";
+import { onRailway } from "./platform.js";
 
 /**
  * Reads a required environment variable, throwing if it is unset so
@@ -99,10 +100,24 @@ export const FACTORY_BRANCH_PREFIX =
  * const { token } = await ctx.getToken(linearAuth);
  * ```
  */
-export const linearAuth = connect({
-  connector: requireEnv("LINEAR_CONNECTOR", "linear/foreman-agent"),
-  principalType: "app",
-  tokenParams: {
-    scopes: ["read", "write", "issues:create", "comments:create"],
-  },
-});
+export const linearAuth = onRailway
+  ? {
+      credentialOwner: "app" as const,
+      getToken: async () => ({ token: linearAccessToken() }),
+    }
+  : connect({
+      connector: requireEnv("LINEAR_CONNECTOR", "linear/foreman-agent"),
+      principalType: "app",
+      tokenParams: {
+        scopes: ["read", "write", "issues:create", "comments:create"],
+      },
+    });
+
+/**
+ * The Linear app token on Railway, read on use rather than at module load, so
+ * a deployment that only wires GitHub still discovers cleanly and Linear calls
+ * fail with a message that names the variable.
+ */
+export function linearAccessToken(): string {
+  return requireEnv("LINEAR_AGENT_ACCESS_TOKEN", "lin_api_...");
+}

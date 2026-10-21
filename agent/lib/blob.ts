@@ -1,4 +1,18 @@
-import { BlobNotFoundError, del, get, head, put } from "@vercel/blob";
+import {
+  BlobNotFoundError,
+  BlobPreconditionFailedError,
+  del,
+  get,
+  head,
+  put,
+} from "@vercel/blob";
+import { DocumentExistsError } from "./document-errors.js";
+import { onRailway } from "./platform.js";
+import {
+  s3DeleteDocument,
+  s3ReadDocument,
+  s3WriteDocument,
+} from "./s3-store.js";
 
 /**
  * The factory's shared Blob layer: the reserved-namespace registry and the document helpers
@@ -31,6 +45,9 @@ export const FACTORY_BRAIN_PREFIX = "factory-brain/";
 /** Blob path prefix holding handoff artifacts passed between stations. */
 export const ARTIFACTS_PREFIX = "artifacts/";
 
+/** Blob path prefix holding one write-once claim per webhook event the channel dispatched. */
+export const DELIVERY_CLAIMS_PREFIX = "deliveries/";
+
 /**
  * A Blob path prefix that a general-purpose Blob tool must not touch.
  *
@@ -59,6 +76,11 @@ const RESERVED_NAMESPACES: Readonly<Record<string, ReservedNamespace>> = {
     label: "handoff artifacts",
     readTool: "read_artifact",
     writeTool: "save_artifact",
+  },
+  [DELIVERY_CLAIMS_PREFIX]: {
+    label: "webhook delivery claims",
+    readTool: "the GitHub channel (no tool)",
+    writeTool: "the GitHub channel (no tool)",
   },
   [FACTORY_BRAIN_PREFIX]: {
     label: "the shared factory brain",
@@ -153,6 +175,9 @@ export const readDocument = async (
 ): Promise<
   { found: false } | { content: string; found: true; uploadedAt: string }
 > => {
+  if (onRailway) {
+    return s3ReadDocument(key);
+  }
   const result = await get(key, { access: "public" });
   if (!result?.stream) {
     return { found: false };
@@ -179,17 +204,32 @@ export const readDocument = async (
  * @param options - Whether an existing document at the key may be replaced.
  * @returns The stored blob's metadata (callers report `pathname`).
  */
-export const writeDocument = (
+export const writeDocument = async (
   key: string,
   contents: string,
   options: { allowOverwrite: boolean }
-) =>
-  put(key, contents, {
-    access: "public",
-    addRandomSuffix: false,
-    allowOverwrite: options.allowOverwrite,
-    contentType: "text/markdown",
-  });
+): Promise<{ pathname: string }> => {
+  if (onRailway) {
+    return s3WriteDocument(key, contents, options);
+  }
+  try {
+    const blob = await put(key, contents, {
+      access: "public",
+      addRandomSuffix: false,
+      allowOverwrite: options.allowOverwrite,
+      contentType: "text/markdown",
+    });
+    return { pathname: blob.pathname };
+  } catch (error) {
+    if (
+      !options.allowOverwrite &&
+      error instanceof BlobPreconditionFailedError
+    ) {
+      throw new DocumentExistsError(key, { cause: error });
+    }
+    throw error;
+  }
+};
 
 /**
  * Delete a document from the store by its exact key.
@@ -204,6 +244,9 @@ export const writeDocument = (
 export const deleteDocument = async (
   key: string
 ): Promise<{ existed: boolean }> => {
+  if (onRailway) {
+    return s3DeleteDocument(key);
+  }
   try {
     await head(key);
   } catch (error) {

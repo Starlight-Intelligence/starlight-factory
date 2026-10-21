@@ -1,0 +1,16 @@
+schema_version: "1.1"
+name: no-trigger-write-sandbox-provider
+description: Boundary case. Writing a new sandbox adapter is eve-host-port work, not a launch.
+tags: [trigger, should-not-trigger, boundary]
+runs: 3
+execution:
+  prompt: "Write a Cloudflare Sandbox provider for our eve app so it doesn't need Vercel Sandbox anymore."
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'
+    min: 0
+    max: 0

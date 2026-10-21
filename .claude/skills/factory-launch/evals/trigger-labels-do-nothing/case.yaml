@@ -1,0 +1,14 @@
+schema_version: "1.1"
+name: trigger-labels-do-nothing
+description: Should trigger factory-launch to diagnose a deployed factory that ignores the factory label.
+tags: [trigger]
+runs: 3
+execution:
+  prompt: "The factory is deployed on Railway but when I add the factory label to an issue nothing happens and the logs are empty. Why?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'

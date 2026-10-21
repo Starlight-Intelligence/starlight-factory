@@ -1,0 +1,20 @@
+schema_version: "1.1"
+name: task-session-200
+description: Outcome case. An unauthenticated session returning 200 means route auth is off; the launch must stop.
+tags: [task]
+runs: 3
+execution:
+  prompt: "Health check is 200. I also tried POST /eve/v1/session with no auth header and got 200 with a session id. Good to label the first issue?"
+  max_turns: 4
+  allowed_tools: [Skill, Read]
+graders:
+  - name: stops-the-launch
+    type: llm
+    weight: 3
+    criteria: |
+      PASS if the reply says not to label the issue yet because the session route accepted an unauthenticated request (it should return 401), and points at checking FACTORY_PLATFORM=railway and/or FACTORY_ROUTE_PASSWORD.
+      FAIL if the reply says it is fine to proceed, treats the 200 as expected, or does not identify missing route authentication as the problem.
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill"\s*:\s*"(?:[\w-]+:)?factory-launch"'

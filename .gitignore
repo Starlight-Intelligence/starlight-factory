@@ -9,3 +9,6 @@ node_modules
 dist
 .DS_Store
 *.tsbuildinfo
+
+# claude plugin eval output
+.claude/skills/*/evals/results/

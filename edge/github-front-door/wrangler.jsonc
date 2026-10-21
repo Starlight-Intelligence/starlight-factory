@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "starlight-factory-github-front-door",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "vars": {
+    // The factory's public origin, e.g. https://factory-production.up.railway.app
+    "ORIGIN_URL": "https://replace-with-your-factory-domain"
+  },
+  // GITHUB_WEBHOOK_SECRET is a secret: `wrangler secret put GITHUB_WEBHOOK_SECRET`.
+  "queues": {
+    "producers": [
+      { "binding": "GITHUB_DELIVERIES", "queue": "factory-github-deliveries" }
+    ],
+    "consumers": [
+      {
+        "queue": "factory-github-deliveries",
+        "max_batch_size": 10,
+        "max_batch_timeout": 2,
+        "max_retries": 10,
+        "dead_letter_queue": "factory-github-deliveries-dlq"
+      }
+    ]
+  }
+}
