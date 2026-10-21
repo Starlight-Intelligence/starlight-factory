@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Creates the factory's GitHub App through GitHub's manifest flow and writes its credentials to
-// ~/.starlight-factory/<name>.env, a directory only you can read, so the private key goes from
-// GitHub to your disk and nowhere else.
+// ~/.starlight-factory/<name>.env, a file only you can read from the moment it exists, so the
+// private key goes from GitHub to your disk and nowhere else.
 //
 //   node scripts/create-github-app.mjs --owner <org-or-user> --webhook https://<domain>/eve/v1/github
 //
@@ -10,13 +10,12 @@
 // slug, private key and webhook secret. It also generates FACTORY_ROUTE_PASSWORD. Install the app
 // on FACTORY_REPO afterwards.
 
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import {
-  chmodSync,
   closeSync,
   existsSync,
-  linkSync,
+  fsyncSync,
   lstatSync,
   mkdirSync,
   openSync,
@@ -26,6 +25,7 @@ import {
 import { createServer } from "node:http";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 
 const { values } = parseArgs({
@@ -58,6 +58,8 @@ const pathExists = (path) => {
   }
 };
 
+const NOT_A_REPO = /not a git repository/i;
+
 const nearestExistingDir = (path) => {
   let dir = dirname(path);
   while (!existsSync(dir) && dirname(dir) !== dir) {
@@ -66,24 +68,30 @@ const nearestExistingDir = (path) => {
   return dir;
 };
 
-/** True when git would track `path`: inside a work tree and not ignored. */
+/**
+ * True unless git confirms `path` is outside every work tree or ignored. Any answer git can't give
+ * (git missing, a safe.directory refusal, a broken repo) counts as tracked, so the key is never
+ * written where it could be committed on the strength of a failed check.
+ */
 const gitWouldTrack = (path) => {
   const dir = nearestExistingDir(path);
-  try {
-    execFileSync("git", ["-C", dir, "rev-parse", "--is-inside-work-tree"], {
-      stdio: "ignore",
-    });
-  } catch {
-    return false;
-  }
-  try {
-    execFileSync("git", ["-C", dir, "check-ignore", "-q", path], {
-      stdio: "ignore",
-    });
-    return false;
-  } catch {
+  const inside = spawnSync(
+    "git",
+    ["-C", dir, "rev-parse", "--is-inside-work-tree"],
+    { encoding: "utf8" }
+  );
+  if (inside.error) {
     return true;
   }
+  if (inside.status !== 0) {
+    return !NOT_A_REPO.test(inside.stderr);
+  }
+  if (inside.stdout.trim() !== "true") {
+    return true;
+  }
+  const ignored = spawnSync("git", ["-C", dir, "check-ignore", "-q", path]);
+  // 0: ignored. 1: not ignored. Anything else: git couldn't tell.
+  return ignored.error !== undefined || ignored.status !== 0;
 };
 
 // Refuse up front, before an app exists, rather than after GitHub has handed over a key.
@@ -172,59 +180,63 @@ const page = `<!doctype html><meta charset="utf-8"><title>Create the factory Git
 <button type="submit" style="font-size:1rem;padding:.6rem 1rem">Create on GitHub</button>
 </form></body>`;
 
-/**
- * Makes PRIVATE_DIR readable by the current user only, before anything is written into it. A file
- * created inside then starts out private, so there is no moment when another account could open
- * it. Runs at startup, so a failure costs nothing: no app exists yet.
- */
-const ensurePrivateDir = () => {
-  mkdirSync(PRIVATE_DIR, { mode: 0o700, recursive: true });
-  if (process.platform === "win32") {
-    execFileSync(
-      "icacls",
-      [
-        PRIVATE_DIR,
-        "/inheritance:r",
-        "/grant:r",
-        `${process.env.USERNAME}:(OI)(CI)F`,
-      ],
-      { stdio: "ignore" }
-    );
-  } else {
-    chmodSync(PRIVATE_DIR, 0o700);
-  }
-};
+const isWindows = process.platform === "win32";
+const WINDOWS_WRITER = fileURLToPath(
+  new URL("./write-private-file.ps1", import.meta.url)
+);
 
 /**
- * Writes the secrets into a fresh file inside PRIVATE_DIR, then hard-links it to `path`. Linking
- * fails if `path` already exists, so nothing is ever replaced, and the linked name is the same
- * private file, never a copy with looser permissions.
+ * Creates `path` exclusively and writes `contents`, readable only by the current account from the
+ * moment the file exists, so nobody else can ever open it, even briefly.
+ *
+ * Windows: a POSIX mode does nothing there, and a folder's ACL can be widened behind our back (the
+ * Codex Windows sandbox service adds a read grant for its sandbox users to new folders in the
+ * profile within seconds). So `write-private-file.ps1` creates the file with an owner-only,
+ * inheritance-protected ACL applied at creation, opens it unshared, writes, and proves the ACL.
+ * The secrets travel on stdin, never in arguments. Elsewhere: O_CREAT|O_EXCL with mode 600.
+ * Both refuse an existing path, including a symlink.
  */
 const writePrivateFile = (path, contents) => {
-  const staged = join(PRIVATE_DIR, `.${randomBytes(8).toString("hex")}.tmp`);
-  const fd = openSync(staged, "wx", 0o600);
+  if (isWindows) {
+    const result = spawnSync(
+      "pwsh",
+      ["-NoProfile", "-NonInteractive", "-File", WINDOWS_WRITER],
+      {
+        encoding: "utf8",
+        env: { ...process.env, SF_PRIVATE_PATH: path },
+        input: contents,
+      }
+    );
+    if (result.error || result.status !== 0) {
+      throw new Error(
+        `could not create ${path} privately: ${(result.stderr ?? "").trim() || result.error?.code || `exit ${result.status}`}`
+      );
+    }
+    return;
+  }
+  const fd = openSync(path, "wx", 0o600);
   try {
     writeSync(fd, contents);
+    fsyncSync(fd);
   } finally {
     closeSync(fd);
   }
-  try {
-    linkSync(staged, path);
-  } catch (error) {
-    // The app already exists, so keep the private copy rather than lose the key.
-    console.error(
-      `Could not place the credentials at ${path} (${error.code ?? error.name}). They are in ${staged}, readable only by you.`
-    );
-    throw error;
-  }
-  unlinkSync(staged);
+};
+
+// Prove the writer works before an app exists: a failure here costs nothing.
+const preflightPrivateWrite = () => {
+  mkdirSync(PRIVATE_DIR, { mode: 0o700, recursive: true });
+  mkdirSync(dirname(out), { recursive: true });
+  const probe = join(dirname(out), `.probe-${randomBytes(6).toString("hex")}`);
+  writePrivateFile(probe, "probe\n");
+  unlinkSync(probe);
 };
 
 try {
-  ensurePrivateDir();
+  preflightPrivateWrite();
 } catch (error) {
   console.error(
-    `Could not make ${PRIVATE_DIR} private (${error.code ?? error.name}). Nothing was created.`
+    `Cannot write credentials privately (${error.message}). Nothing was created.${isWindows ? " This needs PowerShell 7 (pwsh) on PATH." : ""}`
   );
   process.exit(1);
 }
