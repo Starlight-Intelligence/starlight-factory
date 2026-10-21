@@ -60,6 +60,19 @@ eve remote connect --url https://<your-railway-domain> --header "Authorization: 
 
 Then label an issue `factory` on `FACTORY_REPO`. The run should end in a draft pull request.
 
+## Faster setup
+
+- `railway config plan` previews the whole project from `.railway/railway.ts` (service, volume at `/app/.eve/.workflow-data`, bucket wired to the `S3_*` variables, a generated route password); `railway config apply` creates it. Needs Railway CLI 5.42.1 or newer and a linked project.
+- `node scripts/create-github-app.mjs --owner <org> --webhook https://<domain>/eve/v1/github` creates the GitHub App with the right permissions and writes its id, slug, key and webhook secret to `.env.railway.local` (git-ignored). Copy them into Railway from there.
+
+## Optional: Cloudflare
+
+Each piece is independent; use none, some or all.
+
+- **R2 instead of a Railway Bucket.** The S3 store works with R2 unchanged: `S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com`, `S3_REGION=auto`, an R2 API token's key pair, and the bucket name. R2 supports the conditional put that keeps artifacts write-once, and charges no egress.
+- **Cloudflare AI Gateway for models.** Set `MODEL_ROUTE=cloudflare`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_AI_GATEWAY` (the gateway's name), `ANTHROPIC_API_KEY` and `OPENAI_API_KEY`, plus `CF_AIG_TOKEN` if the gateway requires authentication. Calls go to each vendor's own API through the gateway, so you get logs, caching, rate limits and spend in one place for both the implementer's and the reviewer's vendor. `MODEL_ROUTE=direct` calls the vendors with no gateway.
+- **GitHub front door** (`edge/github-front-door`). GitHub never redelivers a failed webhook, so a factory that is restarting or down loses the label that should have started a run. This Worker verifies the signature at the edge, queues the delivery, and replays it byte for byte until the factory accepts it, with backoff up to 30 minutes and a dead-letter queue. Point the GitHub App's webhook at the Worker instead of Railway. It needs Cloudflare Queues (Workers Paid). Linear is not routed through it because eve rejects Linear deliveries whose timestamp is stale.
+
 ## Known gaps
 
 - Sandboxes are rented from Vercel, so a Railway deployment still needs a Vercel account. A custom eve sandbox provider for another firewall-capable host would remove it.
