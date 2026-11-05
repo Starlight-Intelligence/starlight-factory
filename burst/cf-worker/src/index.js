@@ -1,6 +1,25 @@
 // Cloudflare burst lane: one Durable Object per subtask, executed on Workers AI.
 // The DO keeps the subtask's state so a run can be inspected after the fact (GET /run/:id).
-import { DurableObject } from "cloudflare:workers";
+import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
+export { MissionAgent } from "./mission.js";
+
+const MISSION_ID = /^[\w.-]{1,80}$/;
+
+// Reachable only through a service binding (e.g. Mission Control's env.BURST), never over public HTTP,
+// so a bound worker can start and read missions without holding the shared token.
+export class MissionAPI extends WorkerEntrypoint {
+  async start({ id, mission, swarm, team, fanout }) {
+    if (!mission || typeof mission !== "string") throw new Error("mission required");
+    const missionId = MISSION_ID.test(String(id ?? "")) ? String(id) : crypto.randomUUID();
+    const stub = this.env.MISSION.get(this.env.MISSION.idFromName(missionId));
+    const s = await stub.start({ id: missionId, mission, swarm, team: Array.isArray(team) ? team : [], fanout });
+    return { id: missionId, status: s.status };
+  }
+  async get(id, since = 0) {
+    if (!MISSION_ID.test(String(id))) throw new Error("bad mission id");
+    return this.env.MISSION.get(this.env.MISSION.idFromName(String(id))).get(since);
+  }
+}
 
 const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
@@ -37,6 +56,17 @@ export default {
     if (url.pathname === "/health") return Response.json({ ok: true, colo: request.cf?.colo });
     if (request.headers.get("authorization") !== `Bearer ${env.BURST_TOKEN}`) {
       return new Response("unauthorized", { status: 401 });
+    }
+    const mm = url.pathname.match(/^\/mission\/([\w.-]{1,80})$/);
+    if (mm) {
+      const stub = env.MISSION.get(env.MISSION.idFromName(mm[1]));
+      if (request.method === "POST") {
+        const b = await request.json().catch(() => null);
+        if (!b?.mission) return new Response("mission required", { status: 400 });
+        return Response.json(await stub.start({ ...b, id: mm[1] }), { status: 202 });
+      }
+      const s = await stub.get(Number(url.searchParams.get("since") ?? 0));
+      return s ? Response.json(s) : new Response("not found", { status: 404 });
     }
     const m = url.pathname.match(/^\/run\/([\w.-]{1,120})$/);
     if (!m) return new Response("not found", { status: 404 });

@@ -29,6 +29,14 @@ node burst/receipt.mjs                                              # audit trai
 - Frontier roster, 14 subtasks: peak 14 in flight, 8 Cloudflare / 6 Vercel across four model families, 97.7 s wall, $0.1722 metered, PASS on round 1 (`examples/receipt-14way-frontier-pass.json`).
 - Before the word cap, an unbounded Opus draft took 272.4 s and $0.6597, and the checker failed both rounds for truncation.
 
+## Hosted missions (no localhost)
+
+`cf-worker/src/mission.js` runs a whole mission inside one `MissionAgent` Durable Object, started from an alarm: plan (Sonnet 5.5) -> subtasks alternate Workers AI and gateway models -> Opus 5.5 integrates -> GPT-6.1 Sol checks, one revise round -> state and receipt in DO storage.
+
+- Bound workers call the `MissionAPI` entrypoint (`start({mission, swarm, team})`, `get(id, since)`) with no token; it is not reachable over public HTTP.
+- `POST|GET /mission/:id` is the token-gated HTTP route; `node burst/mission-cli.mjs "<mission>" "<swarm>" "agent-id,..."` drives it.
+- Measured 2026-11-05: Mission Control's recorded "Price and launch our first paid offer" with its 7-agent Revenue & Venture team ran as 14 subtasks (7 edge, 7 across Claude/GPT/Gemini) in 157.2 s for $0.3564; the checker returned REVISE twice.
+
 ## Deploy
 
 ```bash
