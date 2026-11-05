@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starlight Burst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07090d;--panel:#0d1117;--line:#1c2330;--ink:#e6edf3;--mute:#7d8590;--local:#d2a8ff;--cloudflare:#f6821f;--vercel:#ededed;--anthropic:#d97757;--ok:#3fb950;--warn:#d29922;--bad:#f85149}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line)}
+header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.2px}
+header .sub{color:var(--mute);font-size:13px}
+.wrap{padding:16px 24px;display:grid;gap:16px}
+form{display:flex;gap:8px;flex-wrap:wrap}
+textarea{flex:1 1 480px;min-height:56px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit;resize:vertical}
+select,button{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:0 14px;font:inherit;height:56px}
+button{background:var(--ink);color:#000;font-weight:600;cursor:pointer;border:0}button:disabled{opacity:.4;cursor:wait}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.stat b{display:block;font-size:22px;font-weight:600}.stat span{color:var(--mute);font-size:12px}
+.ram{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
+.bar{position:relative;height:14px;background:#151b24;border-radius:7px;overflow:hidden;margin-top:8px}
+.bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--local),#8957e5);transition:width .6s}
+.bar .floor{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)}
+.ramrow{display:flex;justify-content:space-between;color:var(--mute);font-size:12px}
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:220px;display:flex;flex-direction:column}
+.lane h3{margin:0;padding:10px 12px;font-size:13px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.lane h3 small{color:var(--mute);font-weight:400}
+.lane .cards{padding:8px;display:grid;gap:6px;align-content:start}
+.lane[data-lane=local] h3{box-shadow:inset 3px 0 var(--local)}.lane[data-lane=cloudflare] h3{box-shadow:inset 3px 0 var(--cloudflare)}
+.lane[data-lane=vercel] h3{box-shadow:inset 3px 0 var(--vercel)}.lane[data-lane=anthropic] h3{box-shadow:inset 3px 0 var(--anthropic)}
+.lane.off{opacity:.45}
+.card{border:1px solid var(--line);border-radius:6px;padding:7px 9px;font-size:12px;cursor:pointer;animation:in .25s ease-out}
+.card .t{font-weight:500}.card .m{color:var(--mute);font-size:11px;margin-top:2px}
+.card.run{border-color:var(--warn)}.card.run .t::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--warn);margin-right:6px;animation:pulse 1s infinite}
+.card.done{border-color:#23402b}.card.done .t::before{content:"✓ ";color:var(--ok)}
+.card.fail{border-color:var(--bad)}
+@keyframes in{from{opacity:0;transform:translateY(-4px)}}@keyframes pulse{50%{opacity:.25}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;display:flex;flex-direction:column;min-height:260px;max-height:520px}
+.panel h3{margin:0;padding:10px 12px;font-size:13px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.panel .body{padding:10px 12px;overflow:auto;white-space:pre-wrap;font-size:13px}
+.log div{font-size:12px;padding:2px 0;color:var(--mute)}.log div b{color:var(--ink);font-weight:500}
+.pill{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line)}.pill.PASS{color:var(--ok);border-color:var(--ok)}.pill.REVISE{color:var(--warn);border-color:var(--warn)}
+.phase{color:var(--mute);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Starlight Burst</h1>
+  <span class="sub">one task, many lanes: RAM-gated local Claude, burst to Cloudflare and Vercel, cross-provider check, receipt on disk</span>
+  <span style="flex:1"></span><span id="phase" class="phase mono">idle</span>
+</header>
+<div class="wrap">
+  <form id="f">
+    <textarea id="task">Design the go-to-market for "Starlight Kernel", an open-source acceptance engine that verifies AI agent pull requests with cross-provider receipts. Cover ICP, positioning vs. CodeRabbit and Graphite, launch channels, pricing ladder, a 30-day launch plan, risks, and the first 5 metrics.</textarea>
+    <select id="fan"><option>6</option><option>8</option><option selected>12</option><option>16</option><option>24</option></select>
+    <button id="go">Burst</button>
+  </form>
+  <div class="stats">
+    <div class="stat"><b id="sTasks">0/0</b><span>subtasks done</span></div>
+    <div class="stat"><b id="sRun">0</b><span>running now · peak <span id="sPeak">0</span></span></div>
+    <div class="stat"><b id="sSplit">0 / 0</b><span>local / cloud</span></div>
+    <div class="stat"><b id="sTime" class="mono">0.0s</b><span>wall clock</span></div>
+    <div class="stat"><b id="sSeq" class="mono">0.0s</b><span>sequential agent time</span></div>
+    <div class="stat"><b id="sSpeed">×1.0</b><span>parallel speed-up</span></div>
+  </div>
+  <div class="ram">
+    <div class="ramrow"><span>Local machine free RAM <b id="rFree" class="mono" style="color:var(--ink)">–</b> of <span id="rTot">–</span> GiB</span><span>floor <span id="rFloor">4</span> GiB · local slots <b id="rSlots" style="color:var(--ink)">0</b></span></div>
+    <div class="bar"><i id="rBar" style="width:0"></i><span class="floor" id="rFloorMark"></span></div>
+  </div>
+  <div class="lanes" id="lanes"></div>
+  <div class="grid2">
+    <div class="panel"><h3>Integrated deliverable <span id="synthMeta" class="phase"></span></h3><div class="body" id="synth">Run a task to see the merged output.</div></div>
+    <div class="panel"><h3>Independent check <span id="verdict"></span></h3><div class="body" id="check"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Selected subtask <span id="selMeta" class="phase"></span></h3><div class="body" id="sel">Click a card.</div></div>
+    <div class="panel"><h3>Admission log</h3><div class="body log mono" id="log"></div></div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const LANE_ORDER = ["local", "cloudflare", "vercel", "anthropic"];
+const DEFAULT_LANES = { local:{label:"Local Claude Code",meter:"Max subscription",enabled:true}, cloudflare:{label:"Cloudflare Agents",meter:"Workers AI",enabled:true}, vercel:{label:"Vercel Fluid + AI Gateway",meter:"AI Gateway",enabled:true}, anthropic:{label:"Claude API",meter:"API key",enabled:false} };
+let S, t0, timer;
+function reset(lanes) {
+  S = { subs:{}, total:0, done:0, running:0, peak:0, local:0, cloud:0, seq:0 };
+  $("lanes").innerHTML = LANE_ORDER.map((k) => { const l = lanes[k]; return `<div class="lane ${l.enabled ? "" : "off"}" data-lane="${k}"><h3>${l.label}<small>${l.enabled ? l.meter : "not configured"}</small></h3><div class="cards" id="c-${k}"></div></div>`; }).join("");
+  $("log").innerHTML = ""; $("synth").textContent = ""; $("check").textContent = ""; $("verdict").innerHTML = ""; $("synthMeta").textContent = "";
+  stats();
+}
+reset(DEFAULT_LANES);
+function stats() {
+  $("sTasks").textContent = `${S.done}/${S.total}`; $("sRun").textContent = S.running; $("sPeak").textContent = S.peak;
+  $("sSplit").textContent = `${S.local} / ${S.cloud}`; $("sSeq").textContent = (S.seq/1000).toFixed(1) + "s";
+  const wall = t0 ? (Date.now() - t0) : 0; $("sTime").textContent = (wall/1000).toFixed(1) + "s";
+  $("sSpeed").textContent = "×" + (wall > 0 && S.seq > 0 ? (S.seq / wall).toFixed(1) : "1.0");
+}
+function log(html) { const d = document.createElement("div"); d.innerHTML = `<b>${new Date().toLocaleTimeString()}</b> ${html}`; $("log").prepend(d); }
+const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+function card(id, lane) {
+  const s = S.subs[id]; let el = document.getElementById("k-" + id);
+  if (el) el.remove();
+  el = document.createElement("div"); el.id = "k-" + id; el.className = "card " + s.state;
+  el.innerHTML = `<div class="t">${esc(s.title)}</div><div class="m">${esc(s.role)}${s.ms ? " · " + (s.ms/1000).toFixed(1) + "s · " + esc(s.where || "") : ""}</div>`;
+  el.onclick = () => { $("sel").textContent = s.output || s.error || s.prompt; $("selMeta").textContent = `${lane} · ${s.model || ""}`; };
+  $("c-" + lane).prepend(el);
+}
+const es = new EventSource("/events");
+es.onmessage = (m) => {
+  const e = JSON.parse(m.data);
+  if (e.type === "ram") {
+    $("rFree").textContent = e.freeGiB.toFixed(2); $("rTot").textContent = e.totalGiB; $("rFloor").textContent = e.floorGiB; $("rSlots").textContent = e.localSlots;
+    $("rBar").style.width = (100 * e.freeGiB / e.totalGiB) + "%"; $("rFloorMark").style.left = (100 * e.floorGiB / e.totalGiB) + "%";
+    $("rBar").style.background = e.freeGiB < e.floorGiB ? "linear-gradient(90deg,#f85149,#d29922)" : "";
+    return;
+  }
+  if (e.type === "start") { reset(e.lanes); t0 = Date.now(); clearInterval(timer); timer = setInterval(stats, 100); $("go").disabled = true; log(`run <b>${e.runId}</b> · fan-out ${e.fanout}`); }
+  if (e.type === "phase") { $("phase").textContent = e.phase + (e.lane ? " · " + e.lane : ""); }
+  if (e.type === "plan") { S.total = e.subtasks.length; e.subtasks.forEach((s) => (S.subs[s.id] = { ...s, state: "queued" })); log(`chair planned <b>${S.total}</b> subtasks on ${e.lane}`); }
+  if (e.type === "admit") { const s = S.subs[e.id]; s.state = "run"; s.lane = e.lane; S.running = e.running; S.peak = e.peak; card(e.id, e.lane); log(`${e.id} → <b>${e.lane}</b> · ${esc(e.reason)}`); }
+  if (e.type === "done") { const s = S.subs[e.id]; Object.assign(s, { state:"done", ms:e.ms, where:e.where, model:e.model, output:e.output }); S.done++; S.running--; S.seq += e.ms; e.lane === "local" ? S.local++ : S.cloud++; card(e.id, e.lane); }
+  if (e.type === "fail") { const s = S.subs[e.id]; Object.assign(s, { state:"fail", error:e.error }); S.running--; card(e.id, e.lane); log(`<span style="color:var(--bad)">${e.id} failed on ${e.lane}</span>: ${esc(e.error)} (requeued)`); }
+  if (e.type === "synth") { $("synth").textContent = e.output; $("synthMeta").textContent = `${e.lane} · ${e.model} · ${(e.ms/1000).toFixed(1)}s`; S.seq += e.ms; }
+  if (e.type === "verify") { $("check").textContent = e.output; $("verdict").innerHTML = `<span class="pill ${e.verdict}">${e.verdict} · ${e.lane} · ${esc(e.model)}</span>`; S.seq += e.ms; }
+  if (e.type === "complete") { clearInterval(timer); stats(); $("phase").textContent = `complete in ${(e.ms/1000).toFixed(1)}s · peak ${e.peak} parallel`; log(`complete · lanes ${esc(JSON.stringify(e.byLane))} · verdict <b>${e.verdict}</b>`); }
+  if (e.type === "receipt") { log(`receipt written <b>${esc(e.path)}</b> (${e.events} events)`); $("go").disabled = false; }
+  if (e.type === "error") { log(`<span style="color:var(--bad)">error: ${esc(e.msg)}</span>`); clearInterval(timer); }
+  if (e.type === "log") log(esc(e.msg));
+  stats();
+};
+$("f").onsubmit = async (ev) => { ev.preventDefault(); const r = await fetch("/run", { method:"POST", body: JSON.stringify({ task: $("task").value, fanout: $("fan").value }) }); if (!r.ok) log(`<span style="color:var(--bad)">${esc(await r.text())}</span>`); };
+</script>
+</body>
+</html>

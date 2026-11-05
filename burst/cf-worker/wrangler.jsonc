@@ -1,0 +1,9 @@
+{
+  "name": "starlight-burst-agent",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "ai": { "binding": "AI" },
+  "durable_objects": { "bindings": [{ "name": "AGENT", "class_name": "BurstAgent" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["BurstAgent"] }],
+  "observability": { "enabled": true }
+}
