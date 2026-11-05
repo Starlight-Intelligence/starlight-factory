@@ -4,8 +4,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const BASE = process.env.MC_URL ?? "https://starlight-mission-control-live.frankxai.workers.dev";
-const key = fs.readFileSync(path.join(os.homedir(), ".starlight", "burst", "mission.key"), "utf8").trim();
+const BASE = process.env.MC_URL ?? "https://starlight-burst-console.frankxai.workers.dev";
+const key = fs.readFileSync(process.env.MC_KEY_FILE ?? path.join(os.homedir(), ".starlight", "burst", "mission.key"), "utf8").trim();
+const H = process.env.MC_KEY_HEADER ?? "x-mission-key";
 const body = {
   mission: "Validate a new product idea with real customers before we build it",
   swarm: "Product Forge",
@@ -17,9 +18,9 @@ const post = (headers) => fetch(`${BASE}/api/mission`, { method: "POST", headers
 
 const locked = await post({});
 console.log(`no key   -> HTTP ${locked.status}, run #${locked.id ?? "none written"}, burst ${locked.burst ? "STARTED (gate failed open!)" : `null (${locked.reason})`}`);
-const badKey = await post({ "x-mission-key": "wrong" });
+const badKey = await post({ [H]: "wrong" });
 console.log(`bad key  -> HTTP ${badKey.status}, run #${badKey.id ?? "none written"}, burst ${badKey.burst ? "STARTED (gate failed open!)" : `null (${badKey.reason})`}`);
-const live = await post({ "x-mission-key": key });
+const live = await post({ [H]: key });
 if (!live.burst) throw new Error(`live run did not start: ${live.reason}`);
 console.log(`good key -> run #${live.id}, burst ${live.burst.id} ${live.burst.status}`);
 
@@ -29,7 +30,7 @@ console.log(`read without key -> ${anon.status}${anon.status === 401 ? "" : " (g
 let since = 0;
 for (;;) {
   await new Promise((r) => setTimeout(r, 3000));
-  const s = await fetch(`${BASE}/api/mission/${live.burst.id}?since=${since}`, { headers: { "x-mission-key": key } }).then((r) => r.json());
+  const s = await fetch(`${BASE}/api/mission/${live.burst.id}?since=${since}`, { headers: { [H]: key } }).then((r) => r.json());
   for (const e of s.events) {
     if (e.type === "plan") console.log(`  plan ${e.subtasks.length} subtasks`);
     if (e.type === "verify") console.log(`  check ${e.round}: ${e.verdict}`);

@@ -37,13 +37,12 @@ node burst/receipt.mjs                                              # audit trai
 - `POST|GET /mission/:id` is the token-gated HTTP route; `node burst/mission-cli.mjs "<mission>" "<swarm>" "agent-id,..."` drives it.
 - Measured 2026-11-05: Mission Control's recorded "Price and launch our first paid offer" with its 7-agent Revenue & Venture team ran as 14 subtasks (7 edge, 7 across Claude/GPT/Gemini) in 157.2 s for $0.3564; the checker returned REVISE twice.
 
-## Mission Control, live (`mission-control/`)
+## Burst Console (`mission-control/`) and the production cockpit
 
-`https://starlight-mission-control-live.frankxai.workers.dev` serves the Mission Control page from `scratch/mission-control-edge` (copied by `sync-ui.mjs`, which fails if the page's hooks move) and executes routed missions on the engine over a service binding.
-
-- Execution needs the mission key (`~/.starlight/burst/mission.key`, set as worker secret `MISSION_KEY`; the page asks once via "Unlock live execution"). Without it the run is recorded in D1 only. The engine also caps new missions at 25 per UTC day.
-- `node burst/mission-control/smoke.mjs` proves the gate both ways and runs one live mission. Measured 2026-11-05: no key and wrong key stayed locked; with the key a 6-agent Product Forge team ran 12 subtasks in 135.5 s for $0.3129 (verdict REVISE, deliverable: HOLD, no evidence yet).
-- The production worker `starlight-mission-control` (scratch, another writer) is untouched; the 3-line binding in this worker is what it would adopt.
+- **Production cockpit** `https://starlight-mission-control.frankxai.workers.dev` (starlight-command-center `apps/mission-control-edge`, branch `agent/claude/mission-control-edge`, owner session supabase-starlight-registry-preflight): an operator-key mission also runs on the engine via the `BURST` service binding; anonymous missions stay receipts. Key: `~/.starlight/mission-control/operator.key`, entered in the page's "Operator key" field.
+- **Burst Console** `https://starlight-burst-console.frankxai.workers.dev`: same page (copied by `sync-ui.mjs` from the cockpit branch, never from the stale `scratch/` copy), but no anonymous writes at all (401) because it shares the cockpit's D1. Key: `~/.starlight/burst/mission.key`.
+- The engine caps new missions at 25 per UTC day for every caller.
+- `node burst/mission-control/smoke.mjs` proves the gate both ways and runs one live mission (`MC_URL`, `MC_KEY_FILE`, `MC_KEY_HEADER` point it at the cockpit). Measured 2026-11-05 on the cockpit: no key and wrong key gave receipts only; the operator key ran mc-15 in 130.5 s for $0.2857 (M-20261105-vsd231); unauthenticated reads 401.
 
 ## Deploy
 

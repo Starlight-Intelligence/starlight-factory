@@ -1,8 +1,9 @@
 {
-  // Preview of Mission Control with live execution. Same D1 and UI as scratch/mission-control-edge
-  // (ui synced by sync-ui.mjs); missions execute on starlight-burst-agent through a service binding.
+  // Burst Console: operator view of the engine with live execution. Shares D1 and the page with the
+  // production cockpit (starlight-command-center apps/mission-control-edge, synced by sync-ui.mjs);
+  // missions execute on starlight-burst-agent through a service binding.
   // No cron here: the production worker owns the Supabase probes.
-  "name": "starlight-mission-control-live",
+  "name": "starlight-burst-console",
   "main": "src/worker.js",
   "compatibility_date": "2025-09-01",
   "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": ["/api/*"] },

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-// Copies the Mission Control page from its source of truth and applies the live-execution hooks,
-// so the preview never forks the design. Fails loudly if the page changed shape under us.
+// Copies the Mission Control page from its source of truth so Burst Console never forks the design.
+// The page itself carries the live-execution hook and live.js (starlight-command-center, same branch);
+// this fails loudly if either is missing.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,20 +12,10 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SRC = process.env.MC_UI_SRC ?? "C:/Users/frank/starlight/repos/starlight-command-center/.claude/worktrees/agent+claude+mission-control-edge/apps/mission-control-edge/public";
 const OUT = path.join(HERE, "public");
 
+const html = fs.readFileSync(path.join(SRC, "index.html"), "utf8");
+if (!html.includes("burstFollow(rc)") || !html.includes('src="live.js"')) throw new Error("canonical page lacks the live-execution hook");
+if (!fs.existsSync(path.join(SRC, "live.js"))) throw new Error("canonical page lacks live.js");
+
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.cpSync(SRC, OUT, { recursive: true });
-
-const file = path.join(OUT, "index.html");
-let html = fs.readFileSync(file, "utf8");
-const patches = [
-  // after the routed-team animation, hand the receipt to the live follower (the page already sends x-operator-key)
-  ['feed();}else line("k",', 'feed();window.burstFollow&&burstFollow(rc);}else line("k",'],
-];
-for (const [from, to] of patches) {
-  if (!html.includes(from)) throw new Error(`UI changed shape; hook not found: ${from.slice(0, 60)}`);
-  html = html.replace(from, to);
-}
-html = html.replace("dispatch simulated", "dispatching live");
-html = html.replace(/<\/body>|$/, `<script>${fs.readFileSync(path.join(HERE, "ui", "live.js"), "utf8")}</script>$&`);
-fs.writeFileSync(file, html);
-console.log(`synced ${SRC} -> ${OUT} with live hooks`);
+console.log(`synced ${SRC} -> ${OUT}`);
