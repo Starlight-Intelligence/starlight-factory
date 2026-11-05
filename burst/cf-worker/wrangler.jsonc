@@ -3,7 +3,7 @@
   "main": "src/index.js",
   "compatibility_date": "2026-10-01",
   "ai": { "binding": "AI" },
-  "vars": { "VERCEL_LANE_URL": "https://starlight-burst-lane.vercel.app" },
+  "vars": { "VERCEL_LANE_URL": "https://starlight-burst-lane.vercel.app", "MISSION_DAILY_CAP": "25" },
   "durable_objects": {
     "bindings": [
       { "name": "AGENT", "class_name": "BurstAgent" },

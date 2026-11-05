@@ -12,6 +12,11 @@ export class MissionAPI extends WorkerEntrypoint {
     if (!mission || typeof mission !== "string") throw new Error("mission required");
     const missionId = MISSION_ID.test(String(id ?? "")) ? String(id) : crypto.randomUUID();
     const stub = this.env.MISSION.get(this.env.MISSION.idFromName(missionId));
+    if (!(await stub.get(0))) {
+      const day = new Date().toISOString().slice(0, 10);
+      const budget = await this.env.MISSION.get(this.env.MISSION.idFromName(`budget:${day}`)).take(Number(this.env.MISSION_DAILY_CAP ?? 25));
+      if (!budget.ok) throw new Error(`daily mission cap reached (${budget.limit})`);
+    }
     const s = await stub.start({ id: missionId, mission, swarm, team: Array.isArray(team) ? team : [], fanout });
     return { id: missionId, status: s.status };
   }
@@ -51,7 +56,7 @@ export class BurstAgent extends DurableObject {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === "/health") return Response.json({ ok: true, colo: request.cf?.colo });
     if (request.headers.get("authorization") !== `Bearer ${env.BURST_TOKEN}`) {
@@ -63,7 +68,11 @@ export default {
       if (request.method === "POST") {
         const b = await request.json().catch(() => null);
         if (!b?.mission) return new Response("mission required", { status: 400 });
-        return Response.json(await stub.start({ ...b, id: mm[1] }), { status: 202 });
+        try {
+          return Response.json(await new MissionAPI(ctx, env).start({ ...b, id: mm[1] }), { status: 202 });
+        } catch (e) {
+          return new Response(e.message, { status: 429 });
+        }
       }
       const s = await stub.get(Number(url.searchParams.get("since") ?? 0));
       return s ? Response.json(s) : new Response("not found", { status: 404 });

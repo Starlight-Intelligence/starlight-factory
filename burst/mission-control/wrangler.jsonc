@@ -1,0 +1,14 @@
+{
+  // Preview of Mission Control with live execution. Same D1 and UI as scratch/mission-control-edge
+  // (ui synced by sync-ui.mjs); missions execute on starlight-burst-agent through a service binding.
+  // No cron here: the production worker owns the Supabase probes.
+  "name": "starlight-mission-control-live",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-09-01",
+  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "starlight-observatory", "database_id": "9a2969fa-da23-4ef0-adba-122d6ad0ed24" }
+  ],
+  "services": [{ "binding": "BURST", "service": "starlight-burst-agent", "entrypoint": "MissionAPI" }],
+  "observability": { "enabled": true }
+}

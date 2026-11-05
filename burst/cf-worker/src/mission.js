@@ -33,6 +33,14 @@ export class MissionAgent extends DurableObject {
     return state;
   }
 
+  // Used on a per-day "budget:YYYY-MM-DD" instance: a hard cap on missions, so a leaked key cannot run up spend.
+  async take(limit) {
+    const n = (await this.ctx.storage.get("n")) ?? 0;
+    if (n >= limit) return { ok: false, used: n, limit };
+    await this.ctx.storage.put("n", n + 1);
+    return { ok: true, used: n + 1, limit };
+  }
+
   async get(since = 0) {
     const s = await this.ctx.storage.get("state");
     if (!s) return null;

@@ -37,6 +37,14 @@ node burst/receipt.mjs                                              # audit trai
 - `POST|GET /mission/:id` is the token-gated HTTP route; `node burst/mission-cli.mjs "<mission>" "<swarm>" "agent-id,..."` drives it.
 - Measured 2026-11-05: Mission Control's recorded "Price and launch our first paid offer" with its 7-agent Revenue & Venture team ran as 14 subtasks (7 edge, 7 across Claude/GPT/Gemini) in 157.2 s for $0.3564; the checker returned REVISE twice.
 
+## Mission Control, live (`mission-control/`)
+
+`https://starlight-mission-control-live.frankxai.workers.dev` serves the Mission Control page from `scratch/mission-control-edge` (copied by `sync-ui.mjs`, which fails if the page's hooks move) and executes routed missions on the engine over a service binding.
+
+- Execution needs the mission key (`~/.starlight/burst/mission.key`, set as worker secret `MISSION_KEY`; the page asks once via "Unlock live execution"). Without it the run is recorded in D1 only. The engine also caps new missions at 25 per UTC day.
+- `node burst/mission-control/smoke.mjs` proves the gate both ways and runs one live mission. Measured 2026-11-05: no key and wrong key stayed locked; with the key a 6-agent Product Forge team ran 12 subtasks in 135.5 s for $0.3129 (verdict REVISE, deliverable: HOLD, no evidence yet).
+- The production worker `starlight-mission-control` (scratch, another writer) is untouched; the 3-line binding in this worker is what it would adopt.
+
 ## Deploy
 
 ```bash
