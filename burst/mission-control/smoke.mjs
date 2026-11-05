@@ -22,10 +22,13 @@ const live = await post({ "x-mission-key": key });
 if (!live.burst) throw new Error(`live run did not start: ${live.reason}`);
 console.log(`good key -> run #${live.id}, burst ${live.burst.id} ${live.burst.status}`);
 
+const anon = await fetch(`${BASE}/api/mission/${live.burst.id}`);
+console.log(`read without key -> ${anon.status}${anon.status === 401 ? "" : " (gate failed open!)"}`);
+
 let since = 0;
 for (;;) {
   await new Promise((r) => setTimeout(r, 3000));
-  const s = await fetch(`${BASE}/api/mission/${live.burst.id}?since=${since}`).then((r) => r.json());
+  const s = await fetch(`${BASE}/api/mission/${live.burst.id}?since=${since}`, { headers: { "x-mission-key": key } }).then((r) => r.json());
   for (const e of s.events) {
     if (e.type === "plan") console.log(`  plan ${e.subtasks.length} subtasks`);
     if (e.type === "verify") console.log(`  check ${e.round}: ${e.verdict}`);

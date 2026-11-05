@@ -48,7 +48,7 @@
     line("h", `live     mission ${id} dispatched to the Burst engine on Cloudflare`);
     let since = 0;
     const tick = async () => {
-      const s = await fetch(`/api/mission/${id}?since=${since}`, { cache: "no-store" }).then((r) => r.json()).catch(() => null);
+      const s = await fetch(`/api/mission/${id}?since=${since}`, { cache: "no-store", headers: { "x-mission-key": store.get() } }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (!s) return setTimeout(tick, 3000);
       for (const e of s.events) { const f = LINE[e.type]; if (f) line(...f(e)); }
       since = s.next;

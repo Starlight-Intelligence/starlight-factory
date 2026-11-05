@@ -99,6 +99,8 @@ export default {
 
     const live = u.pathname.match(/^\/api\/mission\/(mc-\d{1,9})$/);
     if (live && req.method === "GET") {
+      // Mission ids are sequential, so reading a run needs the same key that started it.
+      if (!env.MISSION_KEY || req.headers.get("x-mission-key") !== env.MISSION_KEY) return json({ error: "unauthorized" }, 401);
       const s = await env.BURST.get(live[1], Number(u.searchParams.get("since") || 0));
       return s ? json(s) : json({ error: "not found" }, 404);
     }
