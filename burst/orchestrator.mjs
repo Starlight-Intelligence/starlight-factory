@@ -43,7 +43,11 @@ async function postJson(url, body) {
 function runLocalClaude(job) {
   return new Promise((resolve, reject) => {
     const started = Date.now();
-    const child = spawn("claude", ["-p", "--output-format", "text"], { shell: process.platform === "win32" });
+    // Subtask text comes from a model plan, so the local agent gets no tools, no MCP servers and an empty cwd.
+    const win = process.platform === "win32";
+    const noTools = win ? '""' : "";
+    const cwd = fs.mkdtempSync(path.join(os.tmpdir(), "burst-"));
+    const child = spawn("claude", ["-p", "--output-format", "text", "--tools", noTools, "--strict-mcp-config"], { shell: win, cwd });
     let out = "";
     let err = "";
     const kill = setTimeout(() => child.kill(), 120_000);
@@ -52,6 +56,7 @@ function runLocalClaude(job) {
     child.on("error", reject);
     child.on("close", (code) => {
       clearTimeout(kill);
+      fs.rmSync(cwd, { recursive: true, force: true });
       if (code !== 0) return reject(new Error(err.slice(0, 200) || `claude exited ${code}`));
       resolve({ status: "done", ms: Date.now() - started, model: "claude (Max subscription)", output: out.trim(), where: os.hostname() });
     });
@@ -237,7 +242,16 @@ async function runTask(task, fanout) {
 }
 
 // ---------- http ----------
+// Loopback only, and same-origin only: blocks DNS rebinding (Host) and cross-site POSTs (Origin + JSON preflight).
+const ALLOWED_HOSTS = new Set([`127.0.0.1:${PORT}`, `localhost:${PORT}`]);
+function sameOrigin(req) {
+  if (!ALLOWED_HOSTS.has(req.headers.host)) return false;
+  const origin = req.headers.origin;
+  return !origin || ALLOWED_HOSTS.has(origin.replace(/^http:\/\//, ""));
+}
+
 const server = http.createServer((req, res) => {
+  if (!sameOrigin(req)) return res.writeHead(403).end("forbidden");
   if (req.url === "/events") {
     res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
     res.write("retry: 1000\n\n");
@@ -246,11 +260,18 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (req.url === "/run" && req.method === "POST") {
+    if (!String(req.headers["content-type"]).startsWith("application/json")) return res.writeHead(415).end("application/json required");
     let raw = "";
     req.on("data", (d) => (raw += d));
     req.on("end", () => {
       if (busy) return res.writeHead(409).end("a run is in progress");
-      const { task, fanout } = JSON.parse(raw || "{}");
+      let body;
+      try {
+        body = JSON.parse(raw || "{}");
+      } catch {
+        return res.writeHead(400).end("invalid JSON");
+      }
+      const { task, fanout } = body;
       if (!task || typeof task !== "string" || task.length > 2000) return res.writeHead(400).end("task required (max 2000 chars)");
       const n = Math.max(2, Math.min(24, Number(fanout) || 10));
       runTask(task, n);

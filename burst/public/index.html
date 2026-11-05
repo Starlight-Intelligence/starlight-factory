@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Starlight Burst</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#07090d;--panel:#0d1117;--line:#1c2330;--ink:#e6edf3;--mute:#7d8590;--local:#d2a8ff;--cloudflare:#f6821f;--vercel:#ededed;--anthropic:#d97757;--ok:#3fb950;--warn:#d29922;--bad:#f85149}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,system-ui,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 "Instrument Sans",system-ui,sans-serif}
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 header{display:flex;align-items:center;gap:16px;padding:16px 24px;border-bottom:1px solid var(--line)}
 header h1{font-size:16px;font-weight:600;margin:0;letter-spacing:.2px}
@@ -23,7 +23,7 @@ button{background:var(--ink);color:#000;font-weight:600;cursor:pointer;border:0}
 .stat b{display:block;font-size:22px;font-weight:600}.stat span{color:var(--mute);font-size:12px}
 .ram{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px}
 .bar{position:relative;height:14px;background:#151b24;border-radius:7px;overflow:hidden;margin-top:8px}
-.bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,var(--local),#8957e5);transition:width .6s}
+.bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--local),#8957e5);transition:transform .6s}
 .bar .floor{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)}
 .ramrow{display:flex;justify-content:space-between;color:var(--mute);font-size:12px}
 .lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
@@ -71,7 +71,7 @@ button{background:var(--ink);color:#000;font-weight:600;cursor:pointer;border:0}
   </div>
   <div class="ram">
     <div class="ramrow"><span>Local machine free RAM <b id="rFree" class="mono" style="color:var(--ink)">–</b> of <span id="rTot">–</span> GiB</span><span>floor <span id="rFloor">4</span> GiB · local slots <b id="rSlots" style="color:var(--ink)">0</b></span></div>
-    <div class="bar"><i id="rBar" style="width:0"></i><span class="floor" id="rFloorMark"></span></div>
+    <div class="bar"><i id="rBar"></i><span class="floor" id="rFloorMark"></span></div>
   </div>
   <div class="lanes" id="lanes"></div>
   <div class="grid2">
@@ -116,7 +116,7 @@ es.onmessage = (m) => {
   const e = JSON.parse(m.data);
   if (e.type === "ram") {
     $("rFree").textContent = e.freeGiB.toFixed(2); $("rTot").textContent = e.totalGiB; $("rFloor").textContent = e.floorGiB; $("rSlots").textContent = e.localSlots;
-    $("rBar").style.width = (100 * e.freeGiB / e.totalGiB) + "%"; $("rFloorMark").style.left = (100 * e.floorGiB / e.totalGiB) + "%";
+    $("rBar").style.transform = `scaleX(${e.freeGiB / e.totalGiB})`; $("rFloorMark").style.left = (100 * e.floorGiB / e.totalGiB) + "%";
     $("rBar").style.background = e.freeGiB < e.floorGiB ? "linear-gradient(90deg,#f85149,#d29922)" : "";
     return;
   }
@@ -134,7 +134,7 @@ es.onmessage = (m) => {
   if (e.type === "log") log(esc(e.msg));
   stats();
 };
-$("f").onsubmit = async (ev) => { ev.preventDefault(); const r = await fetch("/run", { method:"POST", body: JSON.stringify({ task: $("task").value, fanout: $("fan").value }) }); if (!r.ok) log(`<span style="color:var(--bad)">${esc(await r.text())}</span>`); };
+$("f").onsubmit = async (ev) => { ev.preventDefault(); const r = await fetch("/run", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ task: $("task").value, fanout: $("fan").value }) }); if (!r.ok) log(`<span style="color:var(--bad)">${esc(await r.text())}</span>`); };
 </script>
 </body>
 </html>
