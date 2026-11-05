@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Starlight Burst</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#05070b;--panel:rgba(13,17,23,.82);--line:#1c2330;--ink:#e6edf3;--mute:#7d8590;--local:#d2a8ff;--cloudflare:#f6821f;--vercel:#ededed;--anthropic:#d97757;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--gold:#f2c46d}
-*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Instrument Sans",system-ui,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Schibsted Grotesk",system-ui,sans-serif}
 .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
 .hero{position:relative;min-height:300px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:24px;padding:28px 28px 20px;overflow:hidden;border-bottom:1px solid var(--line)}
 .hero::before{content:"";position:absolute;inset:0;background:url(/assets/council.png) center 40%/cover;opacity:.32;filter:saturate(1.15)}
@@ -23,7 +23,7 @@ textarea{flex:1 1 380px;min-height:64px;background:rgba(13,17,23,.9);color:var(-
 select,button{background:rgba(13,17,23,.9);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:0 14px;font:inherit;height:64px}
 button{background:linear-gradient(135deg,#f2c46d,#f6821f);color:#120a00;font-weight:700;cursor:pointer;border:0;letter-spacing:.02em}button:disabled{opacity:.45;cursor:wait}
 #map{width:100%;height:300px}
-#map .lbl{font:600 11px "Instrument Sans";fill:#e6edf3}#map .sub{font:10px "JetBrains Mono";fill:#7d8590}
+#map .lbl{font:600 11px "Schibsted Grotesk";fill:#e6edf3}#map .sub{font:10px "JetBrains Mono";fill:#7d8590}
 .wrap{padding:18px 28px;display:grid;gap:16px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -45,7 +45,7 @@ button{background:linear-gradient(135deg,#f2c46d,#f6821f);color:#120a00;font-wei
 .av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:#05070b}
 .card .t{font-weight:600}.card .m{color:var(--mute);font-size:11px;margin-top:2px}
 .badge{display:inline-block;font:10px "JetBrains Mono";padding:1px 6px;border-radius:4px;background:#161c26;color:#c3cbd5;margin-top:3px}
-.card.run{border-color:var(--warn);box-shadow:0 0 0 1px rgba(210,153,34,.25),0 0 18px rgba(210,153,34,.12)}
+.card.run{border-color:var(--warn);background:rgba(210,153,34,.06)}
 .card.done{border-color:#23402b}.card.fail{border-color:var(--bad)}
 @keyframes in{from{opacity:0;transform:translateY(-4px)}}
 .grid2{display:grid;grid-template-columns:3fr 2fr;gap:12px}@media(max-width:900px){.grid2,.hero{grid-template-columns:1fr}}
