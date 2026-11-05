@@ -78,6 +78,8 @@ export default {
     }
 
     if (u.pathname === "/api/mission" && req.method === "POST") {
+      // The D1 database is shared with the production cockpit, so anonymous callers must not write to it at all.
+      if (!env.MISSION_KEY || (req.headers.get("x-operator-key") ?? req.headers.get("x-mission-key")) !== env.MISSION_KEY) return json({ error: "locked", reason: "locked" }, 401);
       const b = await req.json().catch(() => null);
       if (!b || typeof b.mission !== "string" || !b.mission.trim()) return json({ error: "mission required" }, 400);
       const team = Array.isArray(b.team) ? b.team.slice(0, 10).map((t) => clip(t, 60)) : [];
@@ -85,10 +87,6 @@ export default {
       const r = await env.DB.prepare("INSERT INTO mc_runs (mission, swarm, team, lane, at) VALUES (?, ?, ?, ?, ?)")
         .bind(clip(b.mission, 200), clip(b.swarm, 60), JSON.stringify(team), clip(b.lane, 80), now).run();
       ctx.waitUntil(env.DB.prepare("DELETE FROM mc_runs WHERE id <= (SELECT MAX(id) - 500 FROM mc_runs)").run());
-      // Live execution spends real money, so it needs the mission key; without it the run stays a receipt only.
-      if (!env.MISSION_KEY || req.headers.get("x-mission-key") !== env.MISSION_KEY) {
-        return json({ id: r.meta.last_row_id, at: now, burst: null, reason: "locked" });
-      }
       try {
         const started = await env.BURST.start({ id: `mc-${r.meta.last_row_id}`, mission: b.mission, swarm: b.swarm, team });
         return json({ id: r.meta.last_row_id, at: now, burst: started });
@@ -100,7 +98,7 @@ export default {
     const live = u.pathname.match(/^\/api\/mission\/(mc-\d{1,9})$/);
     if (live && req.method === "GET") {
       // Mission ids are sequential, so reading a run needs the same key that started it.
-      if (!env.MISSION_KEY || req.headers.get("x-mission-key") !== env.MISSION_KEY) return json({ error: "unauthorized" }, 401);
+      if (!env.MISSION_KEY || (req.headers.get("x-operator-key") ?? req.headers.get("x-mission-key")) !== env.MISSION_KEY) return json({ error: "unauthorized" }, 401);
       const s = await env.BURST.get(live[1], Number(u.searchParams.get("since") || 0));
       return s ? json(s) : json({ error: "not found" }, 404);
     }

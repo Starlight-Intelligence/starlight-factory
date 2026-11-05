@@ -1,0 +1,9 @@
+{
+  "name": "starlight-burst-agent",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/plan.test.mjs",
+    "deploy": "wrangler deploy"
+  }
+}

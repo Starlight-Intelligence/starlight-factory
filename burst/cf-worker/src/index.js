@@ -8,17 +8,17 @@ const MISSION_ID = /^[\w.-]{1,80}$/;
 // Reachable only through a service binding (e.g. Mission Control's env.BURST), never over public HTTP,
 // so a bound worker can start and read missions without holding the shared token.
 export class MissionAPI extends WorkerEntrypoint {
-  async start({ id, mission, swarm, team, fanout }) {
+  async start({ id, missionId, mission, swarm, team, fanout }) {
     if (!mission || typeof mission !== "string") throw new Error("mission required");
-    const missionId = MISSION_ID.test(String(id ?? "")) ? String(id) : crypto.randomUUID();
-    const stub = this.env.MISSION.get(this.env.MISSION.idFromName(missionId));
+    const runId = MISSION_ID.test(String(id ?? "")) ? String(id) : crypto.randomUUID();
+    const stub = this.env.MISSION.get(this.env.MISSION.idFromName(runId));
     if (!(await stub.get(0))) {
       const day = new Date().toISOString().slice(0, 10);
       const budget = await this.env.MISSION.get(this.env.MISSION.idFromName(`budget:${day}`)).take(Number(this.env.MISSION_DAILY_CAP ?? 25));
       if (!budget.ok) throw new Error(`daily mission cap reached (${budget.limit})`);
     }
-    const s = await stub.start({ id: missionId, mission, swarm, team: Array.isArray(team) ? team : [], fanout });
-    return { id: missionId, status: s.status };
+    const s = await stub.start({ id: runId, missionId, mission, swarm, team: Array.isArray(team) ? team : [], fanout });
+    return { id: runId, missionId: s.missionId, status: s.status };
   }
   async get(id, since = 0) {
     if (!MISSION_ID.test(String(id))) throw new Error("bad mission id");

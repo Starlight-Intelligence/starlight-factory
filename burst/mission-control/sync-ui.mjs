@@ -6,7 +6,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SRC = process.env.MC_UI_SRC ?? "C:/Users/frank/starlight/scratch/mission-control-edge/public";
+// Canonical page: starlight-command-center apps/mission-control-edge (branch agent/claude/mission-control-edge).
+// scratch/mission-control-edge is a stale pre-fix copy; never sync from it.
+const SRC = process.env.MC_UI_SRC ?? "C:/Users/frank/starlight/repos/starlight-command-center/.claude/worktrees/agent+claude+mission-control-edge/apps/mission-control-edge/public";
 const OUT = path.join(HERE, "public");
 
 fs.rmSync(OUT, { recursive: true, force: true });
@@ -15,9 +17,7 @@ fs.cpSync(SRC, OUT, { recursive: true });
 const file = path.join(OUT, "index.html");
 let html = fs.readFileSync(file, "utf8");
 const patches = [
-  // send the mission key with the routed mission
-  ['fetch("/api/mission",{method:"POST",headers:{"content-type":"application/json"}', 'fetch("/api/mission",{method:"POST",headers:{"content-type":"application/json","x-mission-key":(window.missionKey?window.missionKey():"")}'],
-  // after the routed-team animation, hand the receipt to the live follower
+  // after the routed-team animation, hand the receipt to the live follower (the page already sends x-operator-key)
   ['feed();}else line("k",', 'feed();window.burstFollow&&burstFollow(rc);}else line("k",'],
 ];
 for (const [from, to] of patches) {

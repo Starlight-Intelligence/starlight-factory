@@ -1,20 +1,8 @@
 // Live execution add-on for the Mission Control page. Loaded after the page's own script and uses its
 // globals (line, esc, T, stage). The routed team still animates first; then the real run streams in.
 (() => {
-  const KEY = "mc-mission-key";
-  const store = {
-    get: () => { try { return localStorage.getItem(KEY) || ""; } catch { return ""; } },
-    set: (v) => { try { localStorage.setItem(KEY, v); } catch {} },
-  };
-  window.missionKey = store.get;
-
-  const composer = document.getElementById("composer");
-  const unlock = document.createElement("button");
-  unlock.type = "button";
-  const paint = () => { unlock.textContent = store.get() ? "Live execution on" : "Unlock live execution"; };
-  unlock.onclick = () => { const v = prompt("Mission key (from ~/.starlight/burst/mission.key)", store.get()); if (v !== null) { store.set(v.trim()); paint(); } };
-  paint();
-  composer.appendChild(unlock);
+  // The page's own "Operator key" field stores the key as mc-opkey; reads reuse it.
+  const store = { get: () => { try { return localStorage.getItem("mc-opkey") || document.getElementById("opkey")?.value || ""; } catch { return ""; } } };
 
   const out = document.createElement("section");
   out.className = "panel";
@@ -41,7 +29,7 @@
 
   window.burstFollow = (rc) => {
     if (!rc?.burst) {
-      line("g", rc?.reason === "locked" ? "live     locked: unlock live execution to run this team for real" : `live     not started: ${rc?.reason || "no response"}`);
+      line("g", `live     not started: ${rc?.reason || "no response"}`);
       return;
     }
     const id = rc.burst.id;

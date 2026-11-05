@@ -2,7 +2,10 @@
 // AI Gateway frontier models -> integrate -> cross-provider check (one revise round) -> receipt.
 // Runs from an alarm so the request that starts it returns immediately and the run survives disconnects.
 import { DurableObject } from "cloudflare:workers";
+import { agentFromId, fanoutFor, laneFor, parsePlan, resolveMissionId } from "./plan.js";
 
+export { agentFromId };
+export const RECEIPT_SCHEMA = "starlight.burst-receipt.v1";
 const EDGE_MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const MODELS = {
   planner: "anthropic/claude-sonnet-5.5",
@@ -10,22 +13,14 @@ const MODELS = {
   checker: "openai/gpt-6.1-sol",
   workers: ["anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol-fast", "google/gemini-3.8-flash"],
 };
-const MAX_SUBTASKS = 16;
-
-// "meridian-venture-conductor" -> { id, name: "Meridian", role: "venture conductor" }
-export function agentFromId(id) {
-  const [first, ...rest] = String(id).split("-");
-  return { id: String(id), name: first.charAt(0).toUpperCase() + first.slice(1), role: rest.join(" ") || "specialist" };
-}
-
 export class MissionAgent extends DurableObject {
   async start(input) {
     const existing = await this.ctx.storage.get("state");
     if (existing) return existing;
     const team = (input.team ?? []).slice(0, 10).map(agentFromId);
     const state = {
-      id: input.id, mission: String(input.mission).slice(0, 2000), swarm: input.swarm ?? null, team,
-      fanout: Math.max(2, Math.min(MAX_SUBTASKS, Number(input.fanout) || Math.max(team.length * 2, 6))),
+      id: input.id, missionId: resolveMissionId(input.missionId), mission: String(input.mission).slice(0, 2000), swarm: input.swarm ?? null, team,
+      fanout: fanoutFor(input.fanout, team.length),
       status: "queued", createdAt: Date.now(), events: [], costUsd: 0,
     };
     await this.ctx.storage.put("state", state);
@@ -67,7 +62,7 @@ export class MissionAgent extends DurableObject {
       await this.emit(s, "error", { msg: String(e?.message ?? e) });
     }
     s.finishedAt = Date.now();
-    await this.emit(s, "receipt", { schema: "starlight.burst-receipt.v1", ms: s.finishedAt - s.createdAt, costUsd: +s.costUsd.toFixed(4) });
+    await this.emit(s, "receipt", { schema: RECEIPT_SCHEMA, missionId: s.missionId, ms: s.finishedAt - s.createdAt, costUsd: +s.costUsd.toFixed(4) });
   }
 
   async emit(s, type, data = {}) {
@@ -104,25 +99,20 @@ export class MissionAgent extends DurableObject {
       system: `You are the mission chair. Split the mission into independent subtasks for this team: ${roster}. Return ONLY a JSON array, no prose, no code fence. Each item: {"title": string (max 6 words), "agent": one team name, "prompt": self-contained instruction under 50 words}.`,
       prompt: `Mission: ${s.mission}\nSwarm: ${s.swarm ?? "unassigned"}\nProduce exactly ${s.fanout} subtasks.`,
     });
-    const m = r.output.match(/\[[\s\S]*\]/);
-    if (!m) throw new Error("planner returned no JSON array");
-    const byName = new Map(s.team.map((a) => [a.name.toLowerCase(), a]));
-    const subtasks = JSON.parse(m[0]).filter((x) => x?.prompt).slice(0, s.fanout).map((x, i) => {
-      const agent = byName.get(String(x.agent ?? "").toLowerCase()) ?? s.team[i % Math.max(1, s.team.length)] ?? agentFromId("specialist");
-      return { id: `s${i + 1}`, title: String(x.title ?? `Subtask ${i + 1}`), agent, prompt: String(x.prompt) };
-    });
+    const subtasks = parsePlan(r.output, s.team, s.fanout);
     await this.emit(s, "plan", { model: r.model, costUsd: r.costUsd ?? 0, subtasks });
     return subtasks;
   }
 
   async run(s) {
-    await this.emit(s, "start", { mission: s.mission, swarm: s.swarm, team: s.team });
+    await this.emit(s, "start", { missionId: s.missionId, mission: s.mission, swarm: s.swarm, team: s.team });
     const subtasks = await this.plan(s);
     let turn = 0;
     const results = await Promise.all(subtasks.map(async (st, i) => {
-      // Alternate edge and gateway so every mission spans at least two providers.
-      const onEdge = i % 2 === 0;
-      const model = onEdge ? EDGE_MODEL : MODELS.workers[turn++ % MODELS.workers.length];
+      const pick = laneFor(i, turn, MODELS.workers);
+      if (pick.lane === "vercel") turn++;
+      const onEdge = pick.lane === "cloudflare";
+      const model = onEdge ? EDGE_MODEL : pick.model;
       await this.emit(s, "admit", { id: st.id, agent: st.agent, lane: onEdge ? "cloudflare" : "vercel", model });
       const job = {
         system: `You are ${st.agent.name}, the ${st.agent.role}, on a team working on: "${s.mission}". Do only your part, concretely, in compact markdown (max ~200 words).`,

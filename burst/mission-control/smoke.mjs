@@ -12,12 +12,13 @@ const body = {
   team: ["astra-sovereign", "ignis-product-conductor", "nova-customer-discovery", "tess-system-designer", "prism-quality-critic", "vera-decision-verifier"],
   lane: "agent/claude/validate-product-idea",
 };
-const post = (headers) => fetch(`${BASE}/api/mission`, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) }).then((r) => r.json());
+const post = (headers) => fetch(`${BASE}/api/mission`, { method: "POST", headers: { "content-type": "application/json", ...headers }, body: JSON.stringify(body) })
+  .then(async (r) => ({ status: r.status, ...(await r.json()) }));
 
 const locked = await post({});
-console.log(`no key   -> run #${locked.id}, burst ${locked.burst ? "STARTED (gate failed open!)" : `null (${locked.reason})`}`);
+console.log(`no key   -> HTTP ${locked.status}, run #${locked.id ?? "none written"}, burst ${locked.burst ? "STARTED (gate failed open!)" : `null (${locked.reason})`}`);
 const badKey = await post({ "x-mission-key": "wrong" });
-console.log(`bad key  -> run #${badKey.id}, burst ${badKey.burst ? "STARTED (gate failed open!)" : `null (${badKey.reason})`}`);
+console.log(`bad key  -> HTTP ${badKey.status}, run #${badKey.id ?? "none written"}, burst ${badKey.burst ? "STARTED (gate failed open!)" : `null (${badKey.reason})`}`);
 const live = await post({ "x-mission-key": key });
 if (!live.burst) throw new Error(`live run did not start: ${live.reason}`);
 console.log(`good key -> run #${live.id}, burst ${live.burst.id} ${live.burst.status}`);
@@ -32,7 +33,7 @@ for (;;) {
   for (const e of s.events) {
     if (e.type === "plan") console.log(`  plan ${e.subtasks.length} subtasks`);
     if (e.type === "verify") console.log(`  check ${e.round}: ${e.verdict}`);
-    if (e.type === "receipt") console.log(`  receipt ${(e.ms / 1000).toFixed(1)}s $${e.costUsd}`);
+    if (e.type === "receipt") console.log(`  receipt ${e.schema} ${e.missionId} ${(e.ms / 1000).toFixed(1)}s $${e.costUsd}`);
   }
   since = s.next;
   if (s.status === "complete" || s.status === "failed") {
