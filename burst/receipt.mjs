@@ -21,6 +21,5 @@ for (const f of of("fail")) console.log(`  FAIL ${f.id} on ${f.lane}: ${f.error}
 for (const l of of("log")) console.log(`  log: ${l.msg}`);
 for (const e of of("error")) console.log(`  ERROR ${e.msg}`);
 const c = of("complete")[0];
-if (c) console.log(`complete: ${(c.ms / 1000).toFixed(1)}s wall, peak ${c.peak} parallel, lanes ${JSON.stringify(c.byLane)}, verdict ${c.verdict}`);
-const v = of("verify")[0];
-if (v) console.log(`check (${v.model}):\n${v.output.slice(0, 500)}`);
+if (c) console.log(`complete: ${(c.ms / 1000).toFixed(1)}s wall, peak ${c.peak} parallel, lanes ${JSON.stringify(c.byLane)}, verdict ${c.verdict}, metered $${c.costUsd ?? "-"}`);
+for (const v of of("verify")) console.log(`check round ${v.round ?? 1} (${v.model}): ${v.verdict}\n${v.output.slice(0, 300)}`);

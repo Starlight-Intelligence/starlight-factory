@@ -26,6 +26,23 @@ function readTokenFile() {
   return fs.readFileSync(f, "utf8");
 }
 
+// Model roster. Chair and integrator get the strongest Claude; workers spread over three providers;
+// the checker is OpenAI so it never grades its own provider's synthesis.
+const MODELS = {
+  planner: "anthropic/claude-sonnet-5.5",
+  integrator: "anthropic/claude-opus-5.5",
+  checker: "openai/gpt-6.1-sol",
+  workers: ["anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol-fast", "google/gemini-3.8-flash"],
+};
+// The seven-member council from the ACOS artwork; each subtask is carried by one of them.
+const COUNCIL = ["Sophron", "Kael", "Lyra", "Orion", "Nyx", "Valora", "Aethel"];
+
+function anthropicKey() {
+  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY.trim();
+  const f = process.env.ANTHROPIC_API_KEY_FILE;
+  return f && fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : "";
+}
+
 const freeGiB = () => os.freemem() / GIB;
 const localSlots = () => Math.max(0, Math.min(LOCAL_MAX, Math.floor((freeGiB() - FLOOR_GIB) / LOCAL_PROC_GIB)));
 
@@ -33,7 +50,7 @@ const localSlots = () => Math.max(0, Math.min(LOCAL_MAX, Math.floor((freeGiB() -
 const authHeaders = { authorization: `Bearer ${TOKEN}`, "content-type": "application/json" };
 
 async function postJson(url, body) {
-  const r = await fetch(url, { method: "POST", headers: authHeaders, body: JSON.stringify(body), signal: AbortSignal.timeout(90_000) });
+  const r = await fetch(url, { method: "POST", headers: authHeaders, body: JSON.stringify(body), signal: AbortSignal.timeout(300_000) });
   const j = await r.json().catch(() => ({ status: "failed", error: `HTTP ${r.status}` }));
   if (!r.ok || j.status !== "done") throw new Error(j.error ?? `HTTP ${r.status}`);
   // Workers AI hands back already-parsed JSON when the model emits JSON; keep output a string everywhere.
@@ -68,13 +85,13 @@ async function runAnthropic(job) {
   const started = Date.now();
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "x-api-key": process.env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: job.maxTokens ?? 700, system: job.system, messages: [{ role: "user", content: job.prompt }] }),
+    headers: { "x-api-key": anthropicKey(), "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: (job.maxTokens ?? 700) + 4000, system: job.system, messages: [{ role: "user", content: job.prompt }] }),
     signal: AbortSignal.timeout(90_000),
   });
   const j = await r.json();
   if (!r.ok) throw new Error(j?.error?.message ?? `HTTP ${r.status}`);
-  return { status: "done", ms: Date.now() - started, model: "claude-haiku-5-5", output: j.content?.map((c) => c.text ?? "").join("") ?? "" };
+  return { status: "done", ms: Date.now() - started, model: "claude-sonnet-5-5 (API)", where: "Anthropic API", output: j.content?.map((c) => c.text ?? "").join("") ?? "" };
 }
 
 const LANES = {
@@ -89,13 +106,13 @@ const LANES = {
     run: (job, id) => postJson(`${CF_URL}/run/${id}`, job).then((j) => ({ ...j, where: `CF ${j.colo ?? "edge"}` })),
   },
   vercel: {
-    label: "Vercel Fluid + AI Gateway", provider: "anthropic@vercel", meter: "AI Gateway",
+    label: "Vercel AI Gateway", provider: "claude · gpt · gemini", meter: "AI Gateway",
     capacity: () => 8, enabled: () => true,
     run: (job) => postJson(`${VC_URL}/api/run`, job).then((j) => ({ ...j, where: `Vercel ${j.region ?? ""}` })),
   },
   anthropic: {
     label: "Claude API", provider: "anthropic", meter: "API key",
-    capacity: () => 6, enabled: () => Boolean(process.env.ANTHROPIC_API_KEY),
+    capacity: () => 6, enabled: () => Boolean(anthropicKey()),
     run: runAnthropic,
   },
 };
@@ -124,11 +141,11 @@ function parsePlan(text, n) {
   if (!m) throw new Error("planner returned no JSON array");
   const arr = JSON.parse(m[0]).filter((s) => s && s.prompt).slice(0, n);
   if (arr.length === 0) throw new Error("planner returned an empty plan");
-  return arr.map((s, i) => ({ id: `s${i + 1}`, title: String(s.title ?? `Subtask ${i + 1}`), role: String(s.role ?? "specialist"), prompt: String(s.prompt) }));
+  return arr.map((s, i) => ({ id: `s${i + 1}`, agent: COUNCIL[i % COUNCIL.length], title: String(s.title ?? `Subtask ${i + 1}`), role: String(s.role ?? "specialist"), prompt: String(s.prompt) }));
 }
 
 async function plan(task, n) {
-  const job = { system: PLANNER_SYSTEM, prompt: `Task: ${task}\n\nProduce exactly ${n} subtasks.`, maxTokens: 4000 };
+  const job = { system: PLANNER_SYSTEM, prompt: `Task: ${task}\n\nProduce exactly ${n} subtasks.`, maxTokens: 4000, model: MODELS.planner };
   for (const lane of ["vercel", "cloudflare"]) {
     try {
       const r = await LANES[lane].run(job, `plan-${receipt.runId}`);
@@ -159,6 +176,7 @@ async function execute(subtasks, task) {
   const queue = [...subtasks];
   const results = [];
   let peak = 0;
+  let vercelTurn = 0;
   await new Promise((resolveAll) => {
     let running = 0;
     const pump = () => {
@@ -170,12 +188,13 @@ async function execute(subtasks, task) {
         running++;
         peak = Math.max(peak, running);
         emit("admit", { id: st.id, lane: choice.name, reason: choice.reason, running, peak });
-        const job = { system: `You are the ${st.role} on a parallel agent team working on: "${task}". Do only your part, concretely, in compact markdown (max ~200 words).`, prompt: st.prompt, maxTokens: 600 };
+        const model = choice.name === "vercel" ? MODELS.workers[vercelTurn++ % MODELS.workers.length] : undefined;
+        const job = { system: `You are ${st.agent}, the ${st.role} on a parallel agent team working on: "${task}". Do only your part, concretely, in compact markdown (max ~200 words).`, prompt: st.prompt, maxTokens: 600, model };
         LANES[choice.name]
           .run(job, `${receipt.runId}-${st.id}`)
           .then((r) => {
             results.push({ ...st, lane: choice.name, ...r });
-            emit("done", { id: st.id, lane: choice.name, ms: r.ms, model: r.model, where: r.where, output: r.output });
+            emit("done", { id: st.id, lane: choice.name, ms: r.ms, model: r.model, where: r.where, costUsd: r.costUsd ?? 0, output: r.output });
           })
           .catch((e) => {
             emit("fail", { id: st.id, lane: choice.name, error: e.message });
@@ -200,18 +219,36 @@ async function synthesizeAndCheck(task, results) {
   const done = results.filter((r) => r.status === "done");
   const body = done.map((r) => `### ${r.title} (${r.role}, via ${r.lane})\n${r.output}`).join("\n\n");
   emit("phase", { phase: "synthesis", lane: "vercel" });
-  const synth = await LANES.vercel.run({
-    system: "You are the integrator. Merge specialist outputs into one coherent, decision-ready deliverable in markdown. Resolve contradictions explicitly. No filler.",
-    prompt: `Task: ${task}\n\nSpecialist outputs:\n\n${body}`, maxTokens: 1500,
-  }, `${receipt.runId}-synth`);
-  emit("synth", { lane: "vercel", model: synth.model, ms: synth.ms, output: synth.output });
-  emit("phase", { phase: "verification", lane: "cloudflare" });
-  const check = await LANES.cloudflare.run({
-    system: "You are an independent checker from a different model provider. Judge the deliverable against the task. Reply with a first line 'VERDICT: PASS' or 'VERDICT: REVISE', then at most 5 bullet findings.",
-    prompt: `Task: ${task}\n\nDeliverable:\n${synth.output}`, maxTokens: 400,
-  }, `${receipt.runId}-check`);
-  emit("verify", { lane: "cloudflare", model: check.model, ms: check.ms, output: check.output, verdict: /VERDICT:\s*PASS/i.test(check.output) ? "PASS" : "REVISE" });
-  return { synth, check };
+  const synthJob = {
+    // A word cap keeps the draft complete: unbounded drafts ran out of tokens mid-table and the checker failed them.
+    system: "You are the integrator. Merge specialist outputs into one coherent, decision-ready deliverable in markdown. Cover every part of the task with one section each. Resolve contradictions explicitly. Hard limit: 1000 words; prefer tight tables and bullets. Always finish every section.",
+    prompt: `Task: ${task}\n\nSpecialist outputs:\n\n${body}`, maxTokens: 4000, model: MODELS.integrator,
+  };
+  const integrate = (job) => LANES.vercel.run(job).catch((e) => {
+    emit("log", { msg: `integrator ${MODELS.integrator} failed (${e.message}); falling back to ${MODELS.planner}` });
+    return LANES.vercel.run({ ...job, model: MODELS.planner });
+  });
+  const verify = async (deliverable, round) => {
+    emit("phase", { phase: `verification round ${round}`, lane: "vercel" });
+    const check = await LANES.vercel.run({
+      system: "You are an independent checker from a different model provider than the author. Judge the deliverable against the task. Reply with a first line 'VERDICT: PASS' or 'VERDICT: REVISE', then at most 5 bullet findings.",
+      prompt: `Task: ${task}\n\nDeliverable:\n${deliverable}`, maxTokens: 500, model: MODELS.checker,
+    });
+    const verdict = /VERDICT:\s*PASS/i.test(check.output) ? "PASS" : "REVISE";
+    emit("verify", { lane: "vercel", round, model: check.model, ms: check.ms, costUsd: check.costUsd ?? 0, output: check.output, verdict });
+    return { check, verdict };
+  };
+
+  let synth = await integrate(synthJob);
+  emit("synth", { lane: "vercel", round: 1, model: synth.model, ms: synth.ms, costUsd: synth.costUsd ?? 0, output: synth.output });
+  let { check, verdict } = await verify(synth.output, 1);
+  if (verdict === "REVISE") {
+    emit("phase", { phase: "revision", lane: "vercel" });
+    synth = await integrate({ ...synthJob, prompt: `${synthJob.prompt}\n\nYour previous draft:\n${synth.output}\n\nAn independent checker asked for these fixes. Produce the complete revised deliverable:\n${check.output}` });
+    emit("synth", { lane: "vercel", round: 2, model: synth.model, ms: synth.ms, costUsd: synth.costUsd ?? 0, output: synth.output });
+    ({ check, verdict } = await verify(synth.output, 2));
+  }
+  return { synth, check, verdict };
 }
 
 let busy = false;
@@ -227,9 +264,10 @@ async function runTask(task, fanout) {
     emit("plan", { lane: p.lane, subtasks: p.subtasks });
     emit("phase", { phase: "execution" });
     const { results, peak } = await execute(p.subtasks, task);
-    const { check } = await synthesizeAndCheck(task, results);
+    const { verdict } = await synthesizeAndCheck(task, results);
     const byLane = results.reduce((a, r) => ({ ...a, [r.lane]: (a[r.lane] ?? 0) + 1 }), {});
-    emit("complete", { runId, ms: Date.now() - t0, peak, byLane, verdict: /VERDICT:\s*PASS/i.test(check.output) ? "PASS" : "REVISE" });
+    const costUsd = receipt.events.reduce((sum, e) => sum + (e.costUsd ?? 0), 0);
+    emit("complete", { runId, ms: Date.now() - t0, peak, byLane, verdict, costUsd: +costUsd.toFixed(4) });
   } catch (e) {
     emit("error", { msg: e.message });
   } finally {
@@ -279,6 +317,13 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  const asset = req.url.match(/^\/assets\/([\w.-]+\.(png|jpg|webp|mp4))$/);
+  if (asset) {
+    const f = path.join(HERE, "public", "assets", asset[1]);
+    if (!fs.existsSync(f)) return res.writeHead(404).end();
+    res.writeHead(200, { "content-type": { png: "image/png", jpg: "image/jpeg", webp: "image/webp", mp4: "video/mp4" }[asset[2]], "cache-control": "max-age=3600" });
+    return fs.createReadStream(f).pipe(res);
+  }
   if (req.url === "/" || req.url === "/index.html") {
     res.writeHead(200, { "content-type": "text/html; charset=utf-8" });
     return fs.createReadStream(path.join(HERE, "public", "index.html")).pipe(res);
@@ -288,8 +333,13 @@ const server = http.createServer((req, res) => {
 
 if (process.argv.includes("--smoke")) {
   const job = { prompt: "In one sentence: why route agent work across lanes?", maxTokens: 80 };
-  const out = await Promise.allSettled([LANES.cloudflare.run(job, "smoke"), LANES.vercel.run(job)]);
-  out.forEach((o, i) => console.log(["cloudflare", "vercel"][i], o.status === "fulfilled" ? `${o.value.ms}ms ${o.value.where} :: ${o.value.output.slice(0, 140)}` : `FAILED ${o.reason.message}`));
+  const probes = [
+    ["cloudflare", () => LANES.cloudflare.run(job, "smoke")],
+    ...[...new Set([MODELS.planner, MODELS.integrator, MODELS.checker, ...MODELS.workers])].map((m) => [`vercel ${m}`, () => LANES.vercel.run({ ...job, model: m })]),
+    ...(anthropicKey() ? [["anthropic api", () => LANES.anthropic.run(job)]] : []),
+  ];
+  const out = await Promise.allSettled(probes.map(([, f]) => f()));
+  out.forEach((o, i) => console.log(probes[i][0].padEnd(38), o.status === "fulfilled" ? `${o.value.ms}ms ${o.value.where ?? ""} $${o.value.costUsd ?? "-"} :: ${o.value.output.slice(0, 90)}` : `FAILED ${o.reason.message}`));
   console.log(`local slots now: ${localSlots()} (free ${freeGiB().toFixed(2)} GiB, floor ${FLOOR_GIB})`);
 } else {
   server.listen(PORT, "127.0.0.1", () => console.log(`Starlight Burst on http://127.0.0.1:${PORT}  (floor ${FLOOR_GIB} GiB, local slots ${localSlots()})`));

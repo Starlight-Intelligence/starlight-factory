@@ -1,14 +1,26 @@
 // Vercel burst lane: Fluid compute function calling Claude through AI Gateway.
 // Auth to the gateway is the deployment's OIDC token, so no provider key exists anywhere.
-export const config = { maxDuration: 60 };
+// Opus synthesis over a dozen specialist outputs runs past a minute.
+export const config = { maxDuration: 300 };
 
-const MODEL = "anthropic/claude-haiku-5.5";
+const DEFAULT_MODEL = "anthropic/claude-haiku-5.5";
+// Callers pick a model, but only from this list, so a stolen token cannot run arbitrary spend.
+const ALLOWED_MODELS = new Set([
+  DEFAULT_MODEL,
+  "anthropic/claude-sonnet-5.5",
+  "anthropic/claude-opus-5.5",
+  "openai/gpt-6.1-sol-fast",
+  "openai/gpt-6.1-sol",
+  "google/gemini-3.8-flash",
+]);
 const REASONING_HEADROOM = 6000;
 
 export default async function handler(req, res) {
   if (req.method === "GET") return res.status(200).json({ ok: true, region: process.env.VERCEL_REGION });
   if (req.headers.authorization !== `Bearer ${process.env.BURST_TOKEN}`) return res.status(401).send("unauthorized");
   const job = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+  const MODEL = job.model ?? DEFAULT_MODEL;
+  if (!ALLOWED_MODELS.has(MODEL)) return res.status(400).json({ status: "failed", error: `model not allowed: ${MODEL}` });
   const started = Date.now();
   const token = process.env.VERCEL_OIDC_TOKEN || req.headers["x-vercel-oidc-token"];
   const r = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
@@ -34,6 +46,7 @@ export default async function handler(req, res) {
     model: MODEL,
     region: process.env.VERCEL_REGION,
     output,
-    usage: body.usage,
+    costUsd: body.usage?.cost ?? null,
+    tokens: body.usage?.total_tokens ?? null,
   });
 }
