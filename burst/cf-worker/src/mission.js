@@ -2,7 +2,7 @@
 // AI Gateway frontier models -> integrate -> cross-provider check (one revise round) -> receipt.
 // Runs from an alarm so the request that starts it returns immediately and the run survives disconnects.
 import { DurableObject } from "cloudflare:workers";
-import { agentFromId, fanoutFor, laneFor, parsePlan, resolveMissionId } from "./plan.js";
+import { addEventCost, agentFromId, fanoutFor, laneFor, parsePlan, resolveMissionId } from "./plan.js";
 
 export { agentFromId };
 export const RECEIPT_SCHEMA = "starlight.burst-receipt.v1";
@@ -67,7 +67,7 @@ export class MissionAgent extends DurableObject {
 
   async emit(s, type, data = {}) {
     s.events.push({ type, t: Date.now(), ...data });
-    if (typeof data.costUsd === "number") s.costUsd += data.costUsd;
+    s.costUsd = addEventCost(s.costUsd, type, data);
     await this.ctx.storage.put("state", s);
   }
 

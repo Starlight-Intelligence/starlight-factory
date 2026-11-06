@@ -20,6 +20,16 @@ export function resolveMissionId(given, now, rand) {
   return MISSION_ID_RE.test(String(given ?? "")) ? String(given) : newMissionId(now, rand);
 }
 
+// Events that report a total rather than incur a charge. Counting them would double the mission cost.
+const SUMMARY_EVENTS = new Set(["receipt"]);
+
+// Running mission cost after one event. Only charge-bearing events add their costUsd.
+export function addEventCost(total, type, data) {
+  if (SUMMARY_EVENTS.has(type)) return total;
+  const c = data?.costUsd;
+  return typeof c === "number" && Number.isFinite(c) && c > 0 ? total + c : total;
+}
+
 export function fanoutFor(requested, teamSize) {
   return Math.max(2, Math.min(MAX_SUBTASKS, Number(requested) || Math.max(teamSize * 2, 6)));
 }

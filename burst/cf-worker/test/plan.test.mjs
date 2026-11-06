@@ -1,7 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import { agentFromId, fanoutFor, laneFor, MISSION_ID_RE, newMissionId, parsePlan, resolveMissionId } from "../src/plan.js";
+import { addEventCost, agentFromId, fanoutFor, laneFor, MISSION_ID_RE, newMissionId, parsePlan, resolveMissionId } from "../src/plan.js";
+
+test("mission cost counts each charge once and never the receipt summary (factory#3 P1)", () => {
+  const events = [
+    ["plan", { costUsd: 0.01 }], ["admit", {}], ["done", { costUsd: 0 }], ["done", { costUsd: 0.02 }],
+    ["synth", { costUsd: 0.2 }], ["verify", { costUsd: 0.05 }],
+  ];
+  let total = 0;
+  for (const [type, data] of events) total = addEventCost(total, type, data);
+  const receiptCost = +total.toFixed(4);
+  const final = addEventCost(total, "receipt", { costUsd: receiptCost });
+  assert.equal(final, total, "receipt must not add its own total again");
+  assert.equal(+final.toFixed(4), receiptCost);
+  assert.equal(addEventCost(0.1, "done", { costUsd: -5 }), 0.1);
+  assert.equal(addEventCost(0.1, "done", { costUsd: Number.NaN }), 0.1);
+  assert.equal(addEventCost(0.1, "done", { costUsd: "0.3" }), 0.1);
+});
 
 const team = ["meridian-venture-conductor", "ledger-unit-economist", "vera-decision-verifier"].map(agentFromId);
 
