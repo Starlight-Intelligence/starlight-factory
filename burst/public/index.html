@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Starlight Burst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#05070b;--panel:rgba(13,17,23,.82);--line:#1c2330;--ink:#e6edf3;--mute:#7d8590;--local:#d2a8ff;--cloudflare:#f6821f;--vercel:#ededed;--anthropic:#d97757;--ok:#3fb950;--warn:#d29922;--bad:#f85149;--gold:#f2c46d}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Schibsted Grotesk",system-ui,sans-serif}
+.mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+.hero{position:relative;min-height:300px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,520px);gap:24px;padding:28px 28px 20px;overflow:hidden;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:0;background:url(/assets/council.png) center 40%/cover;opacity:.32;filter:saturate(1.15)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 18%,rgba(5,7,11,.55) 60%,var(--bg)),linear-gradient(0deg,var(--bg),transparent 45%)}
+.hero>*{position:relative;z-index:1}
+.eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.hero h1{font-size:40px;line-height:1.05;margin:8px 0 10px;font-weight:700;letter-spacing:-.02em}
+.hero p{color:#c3cbd5;max-width:56ch;margin:0 0 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{font-size:11px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);background:rgba(0,0,0,.4);color:#c3cbd5}
+form{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+textarea{flex:1 1 380px;min-height:64px;background:rgba(13,17,23,.9);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;resize:vertical}
+select,button{background:rgba(13,17,23,.9);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:0 14px;font:inherit;height:64px}
+button{background:linear-gradient(135deg,#f2c46d,#f6821f);color:#120a00;font-weight:700;cursor:pointer;border:0;letter-spacing:.02em}button:disabled{opacity:.45;cursor:wait}
+#map{width:100%;height:300px}
+#map .lbl{font:600 11px "Schibsted Grotesk";fill:#e6edf3}#map .sub{font:10px "JetBrains Mono";fill:#7d8590}
+.wrap{padding:18px 28px;display:grid;gap:16px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.stat b{display:block;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}.stat span{color:var(--mute);font-size:12px}
+.ram{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+.bar{position:relative;height:12px;background:#151b24;border-radius:6px;overflow:hidden;margin-top:8px}
+.bar i{position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,var(--local),#8957e5);transition:transform .6s}
+.bar .floor{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--bad)}
+.ramrow{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--mute);font-size:12px}
+.lanes{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.lane{background:var(--panel);border:1px solid var(--line);border-radius:12px;min-height:200px;display:flex;flex-direction:column}
+.lane h3{margin:0;padding:10px 12px;font-size:13px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.lane h3 small{color:var(--mute);font-weight:400}
+.lane .cards{padding:8px;display:grid;gap:6px;align-content:start}
+.lane[data-lane=local] h3{box-shadow:inset 3px 0 var(--local)}.lane[data-lane=cloudflare] h3{box-shadow:inset 3px 0 var(--cloudflare)}
+.lane[data-lane=vercel] h3{box-shadow:inset 3px 0 var(--vercel)}.lane[data-lane=anthropic] h3{box-shadow:inset 3px 0 var(--anthropic)}
+.lane.off{opacity:.4}
+.card{display:grid;grid-template-columns:28px 1fr;gap:8px;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;cursor:pointer;animation:in .3s ease-out;background:rgba(0,0,0,.25)}
+.av{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:#05070b}
+.card .t{font-weight:600}.card .m{color:var(--mute);font-size:11px;margin-top:2px}
+.badge{display:inline-block;font:10px "JetBrains Mono";padding:1px 6px;border-radius:4px;background:#161c26;color:#c3cbd5;margin-top:3px}
+.card.run{border-color:var(--warn);background:rgba(210,153,34,.06)}
+.card.done{border-color:#23402b}.card.fail{border-color:var(--bad)}
+@keyframes in{from{opacity:0;transform:translateY(-4px)}}
+.grid2{display:grid;grid-template-columns:3fr 2fr;gap:12px}@media(max-width:900px){.grid2,.hero{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;min-height:240px;max-height:620px}
+.panel h3{margin:0;padding:10px 12px;font-size:13px;font-weight:600;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.panel .body{padding:12px 16px;overflow:auto;font-size:13.5px}
+.md h1,.md h2,.md h3{font-size:15px;margin:14px 0 6px;color:var(--gold)}.md p{margin:6px 0}.md ul{margin:4px 0;padding-left:18px}.md code{font-family:"JetBrains Mono";font-size:12px;background:#161c26;padding:1px 4px;border-radius:4px}
+.md table{border-collapse:collapse;margin:8px 0;font-size:12.5px}.md td,.md th{border:1px solid var(--line);padding:4px 8px;text-align:left}
+.log div{font-size:12px;padding:2px 0;color:var(--mute)}.log div b{color:var(--ink);font-weight:500}
+.pill{font-size:11px;padding:2px 8px;border-radius:99px;border:1px solid var(--line)}.pill.PASS{color:var(--ok);border-color:var(--ok)}.pill.REVISE{color:var(--warn);border-color:var(--warn)}
+.phase{color:var(--mute);font-size:12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<section class="hero">
+  <div>
+    <div class="eyebrow">Starlight Agent Collective · live</div>
+    <h1>One task.<br>Every lane at once.</h1>
+    <p>The chair plans, the council fans out, each subtask goes wherever capacity exists right now: your machine while RAM allows, then Cloudflare's edge and Vercel's AI Gateway. A different provider checks the result, and every decision is written to a receipt.</p>
+    <div class="chips"><span class="chip">Claude Opus 5.5 · integrator</span><span class="chip">Claude Sonnet 5.5 · chair</span><span class="chip">GPT-6.1 Sol · checker</span><span class="chip">Gemini 3.8 Flash</span><span class="chip">Llama 3.3 70B @ edge</span><span class="chip">Claude Code · local</span></div>
+    <form id="f">
+      <textarea id="task" aria-label="Task">Design the go-to-market for "Starlight Kernel", an open-source acceptance engine that verifies AI agent pull requests with cross-provider receipts. Cover ICP, positioning vs. CodeRabbit and Graphite, launch channels, pricing ladder, a 30-day launch plan, risks, and the first 5 metrics.</textarea>
+      <select id="fan" aria-label="Fan-out"><option>7</option><option>12</option><option selected>14</option><option>21</option><option>24</option></select>
+      <button id="go">Burst</button>
+    </form>
+  </div>
+  <svg id="map" viewBox="0 0 520 300" role="img" aria-label="Live map of council agents and execution lanes"></svg>
+</section>
+<div class="wrap">
+  <div class="stats">
+    <div class="stat"><b id="sTasks">0/0</b><span>subtasks done</span></div>
+    <div class="stat"><b id="sRun">0</b><span>in flight · peak <span id="sPeak">0</span></span></div>
+    <div class="stat"><b id="sProv">0</b><span>model families used</span></div>
+    <div class="stat"><b id="sTime" class="mono">0.0s</b><span>wall clock</span></div>
+    <div class="stat"><b id="sSpeed">×1.0</b><span>parallel speed-up</span></div>
+    <div class="stat"><b id="sCost" class="mono">$0.0000</b><span>metered spend, measured</span></div>
+  </div>
+  <div class="ram">
+    <div class="ramrow"><span>This machine: <b id="rFree" class="mono" style="color:var(--ink)">–</b> of <span id="rTot">–</span> GiB free</span><span>floor <span id="rFloor">4</span> GiB · local Claude slots <b id="rSlots" style="color:var(--ink)">0</b></span></div>
+    <div class="bar"><i id="rBar"></i><span class="floor" id="rFloorMark"></span></div>
+  </div>
+  <div class="lanes" id="lanes"></div>
+  <div class="grid2">
+    <div class="panel"><h3>Integrated deliverable <span id="synthMeta" class="phase"></span></h3><div class="body md" id="synth"><span class="phase">The merged, decision-ready output appears here.</span></div></div>
+    <div class="panel"><h3>Independent check <span id="verdict"></span></h3><div class="body md" id="check"></div></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Selected subtask <span id="selMeta" class="phase"></span></h3><div class="body md" id="sel"><span class="phase">Click any card.</span></div></div>
+    <div class="panel"><h3>Admission log <span id="phase" class="phase mono">idle</span></h3><div class="body log mono" id="log"></div></div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const LANE_ORDER = ["local", "cloudflare", "vercel", "anthropic"];
+const LANE_COLOR = { local:"#d2a8ff", cloudflare:"#f6821f", vercel:"#ededed", anthropic:"#d97757" };
+const COUNCIL = { Sophron:"#58a6ff", Kael:"#f85149", Lyra:"#bc8cff", Orion:"#3fb950", Nyx:"#39d0d8", Valora:"#f0883e", Aethel:"#f2c46d" };
+const DEFAULT_LANES = { local:{label:"Local Claude Code",meter:"Max subscription",enabled:true}, cloudflare:{label:"Cloudflare Agents",meter:"Workers AI · edge",enabled:true}, vercel:{label:"Vercel AI Gateway",meter:"claude · gpt · gemini",enabled:true}, anthropic:{label:"Claude API",meter:"API key",enabled:false} };
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+// Small, safe markdown: escape first, then format headings, bullets, bold, code, tables.
+function md(src) {
+  const lines = esc(src).split("\n"); let html = "", list = false, table = false;
+  const inline = (t) => t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, "<code>$1</code>");
+  for (const l of lines) {
+    if (/^\s*\|.*\|\s*$/.test(l)) { if (/^\s*\|[\s:|-]+\|\s*$/.test(l)) continue; if (!table) { html += "<table>"; table = true; } html += "<tr>" + l.trim().slice(1, -1).split("|").map((c) => `<td>${inline(c.trim())}</td>`).join("") + "</tr>"; continue; }
+    if (table) { html += "</table>"; table = false; }
+    const b = l.match(/^\s*[-*]\s+(.*)/) || l.match(/^\s*\d+\.\s+(.*)/);
+    if (b) { if (!list) { html += "<ul>"; list = true; } html += `<li>${inline(b[1])}</li>`; continue; }
+    if (list) { html += "</ul>"; list = false; }
+    const h = l.match(/^(#{1,4})\s+(.*)/);
+    if (h) html += `<h3>${inline(h[2])}</h3>`; else if (l.trim()) html += `<p>${inline(l)}</p>`;
+  }
+  return html + (list ? "</ul>" : "") + (table ? "</table>" : "");
+}
+
+// ---- live map: chair in the middle, council ring, lanes on the right ----
+const NS = "http://www.w3.org/2000/svg";
+const svgEl = (tag, attrs, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); (parent || $("map")).appendChild(e); return e; };
+const POS = { chair:{x:150,y:150} };
+function drawMap(lanes) {
+  $("map").innerHTML = "";
+  const defs = svgEl("defs", {}); const g = svgEl("radialGradient", { id:"glow" }, defs);
+  svgEl("stop", { offset:"0%", "stop-color":"#f2c46d", "stop-opacity":".9" }, g); svgEl("stop", { offset:"100%", "stop-color":"#f2c46d", "stop-opacity":"0" }, g);
+  svgEl("circle", { cx:150, cy:150, r:110, fill:"none", stroke:"#1c2330", "stroke-dasharray":"2 4" });
+  Object.keys(COUNCIL).forEach((n, i) => {
+    const a = -Math.PI / 2 + i * 2 * Math.PI / 7; const x = 150 + 110 * Math.cos(a), y = 150 + 110 * Math.sin(a); POS[n] = { x, y };
+    svgEl("line", { x1:150, y1:150, x2:x, y2:y, stroke:"#1c2330" });
+    svgEl("circle", { cx:x, cy:y, r:15, fill:COUNCIL[n], id:"n-" + n, opacity:.85 });
+    const t = svgEl("text", { x, y: y + 4, "text-anchor":"middle", class:"lbl", fill:"#05070b", style:"fill:#05070b;font-size:11px" }); t.textContent = n[0];
+    const s = svgEl("text", { x, y: y + 28, "text-anchor":"middle", class:"sub" }); s.textContent = n;
+  });
+  svgEl("circle", { cx:150, cy:150, r:42, fill:"url(#glow)", id:"chairGlow" });
+  svgEl("circle", { cx:150, cy:150, r:20, fill:"#05070b", stroke:"#f2c46d", "stroke-width":2 });
+  const ct = svgEl("text", { x:150, y:154, "text-anchor":"middle", class:"lbl" }); ct.textContent = "chair";
+  LANE_ORDER.forEach((k, i) => {
+    const y = 45 + i * 70; POS[k] = { x:430, y }; const on = lanes[k].enabled;
+    svgEl("rect", { x:372, y:y - 20, width:140, height:40, rx:8, fill:"#0d1117", stroke:on ? LANE_COLOR[k] : "#1c2330", opacity:on ? 1 : .45, id:"l-" + k });
+    const t = svgEl("text", { x:384, y:y - 3, class:"lbl" }); t.textContent = lanes[k].label;
+    const s = svgEl("text", { x:384, y:y + 12, class:"sub", id:"lc-" + k }); s.textContent = on ? "0 in flight" : "off";
+  });
+}
+function pulse(agent, lane) {
+  const a = POS[agent], b = POS[lane]; if (!a || !b) return;
+  const path = svgEl("path", { d:`M${a.x},${a.y} C${a.x + 120},${a.y} ${b.x - 160},${b.y} ${b.x - 58},${b.y}`, fill:"none", stroke:COUNCIL[agent], "stroke-width":1.6, opacity:.9 });
+  const len = path.getTotalLength(); path.style.strokeDasharray = len; path.style.strokeDashoffset = len;
+  path.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }], { duration: 650, fill:"forwards", easing:"ease-out" });
+  setTimeout(() => path.animate([{ opacity: .9 }, { opacity: .12 }], { duration: 1400, fill:"forwards" }), 900);
+  const node = $("n-" + agent); node && node.animate([{ r: 15 }, { r: 20 }, { r: 15 }], { duration: 500 });
+}
+
+let S, t0, timer;
+function reset(lanes) {
+  S = { subs:{}, total:0, done:0, running:0, peak:0, seq:0, cost:0, fams:new Set(), inflight:{} };
+  $("lanes").innerHTML = LANE_ORDER.map((k) => { const l = lanes[k]; return `<div class="lane ${l.enabled ? "" : "off"}" data-lane="${k}"><h3>${esc(l.label)}<small>${l.enabled ? esc(l.meter || l.provider) : "not configured"}</small></h3><div class="cards" id="c-${k}"></div></div>`; }).join("");
+  ["log", "check", "verdict", "synthMeta"].forEach((id) => ($(id).innerHTML = ""));
+  $("synth").innerHTML = '<span class="phase">The merged, decision-ready output appears here.</span>';
+  drawMap(lanes); stats();
+}
+reset(DEFAULT_LANES);
+function family(model = "") { return /claude|anthropic/i.test(model) ? "Claude" : /gpt|openai/i.test(model) ? "GPT" : /gemini|google/i.test(model) ? "Gemini" : /llama/i.test(model) ? "Llama" : "other"; }
+function stats() {
+  $("sTasks").textContent = `${S.done}/${S.total}`; $("sRun").textContent = S.running; $("sPeak").textContent = S.peak;
+  $("sProv").textContent = S.fams.size; $("sCost").textContent = "$" + S.cost.toFixed(4);
+  const wall = t0 ? Date.now() - t0 : 0; $("sTime").textContent = (wall / 1000).toFixed(1) + "s";
+  $("sSpeed").textContent = "×" + (wall > 0 && S.seq > 0 ? (S.seq / wall).toFixed(1) : "1.0");
+  for (const k of LANE_ORDER) { const el = $("lc-" + k); if (el && el.textContent !== "off") el.textContent = `${S.inflight[k] || 0} in flight`; }
+}
+function log(html) { const d = document.createElement("div"); d.innerHTML = `<b>${new Date().toLocaleTimeString()}</b> ${html}`; $("log").prepend(d); }
+function card(id, lane) {
+  const s = S.subs[id]; document.getElementById("k-" + id)?.remove();
+  const el = document.createElement("div"); el.id = "k-" + id; el.className = "card " + s.state;
+  el.innerHTML = `<div class="av" style="background:${COUNCIL[s.agent] || "#888"}">${esc((s.agent || "?")[0])}</div><div><div class="t">${esc(s.agent)} · ${esc(s.title)}</div><div class="m">${esc(s.role)}${s.ms ? " · " + (s.ms / 1000).toFixed(1) + "s · " + esc(s.where || "") : s.state === "run" ? " · working…" : ""}</div>${s.model ? `<span class="badge">${esc(s.model)}</span>` : ""}</div>`;
+  el.onclick = () => { $("sel").innerHTML = md(s.output || s.error || s.prompt); $("selMeta").textContent = `${s.agent} · ${lane} · ${s.model || ""}`; };
+  $("c-" + lane).prepend(el);
+}
+const es = new EventSource("/events");
+es.onmessage = (m) => {
+  const e = JSON.parse(m.data);
+  if (e.type === "ram") {
+    $("rFree").textContent = e.freeGiB.toFixed(2); $("rTot").textContent = e.totalGiB; $("rFloor").textContent = e.floorGiB; $("rSlots").textContent = e.localSlots;
+    $("rBar").style.transform = `scaleX(${e.freeGiB / e.totalGiB})`; $("rFloorMark").style.left = (100 * e.floorGiB / e.totalGiB) + "%";
+    $("rBar").style.background = e.freeGiB < e.floorGiB ? "linear-gradient(90deg,#f85149,#d29922)" : ""; return;
+  }
+  if (e.type === "start") { reset(e.lanes); t0 = Date.now(); clearInterval(timer); timer = setInterval(stats, 100); $("go").disabled = true; log(`run <b>${esc(e.runId)}</b> · fan-out ${e.fanout}`); }
+  if (e.type === "phase") $("phase").textContent = e.phase + (e.lane ? " · " + e.lane : "");
+  if (e.type === "plan") { S.total = e.subtasks.length; e.subtasks.forEach((s) => (S.subs[s.id] = { ...s, state:"queued" })); S.fams.add("Claude"); log(`chair planned <b>${S.total}</b> subtasks`); }
+  if (e.type === "admit") { const s = S.subs[e.id]; s.state = "run"; S.running = e.running; S.peak = e.peak; S.inflight[e.lane] = (S.inflight[e.lane] || 0) + 1; card(e.id, e.lane); pulse(s.agent, e.lane); log(`${esc(s.agent)} (${e.id}) → <b>${e.lane}</b> · ${esc(e.reason)}`); }
+  if (e.type === "done") { const s = S.subs[e.id]; Object.assign(s, { state:"done", ms:e.ms, where:e.where, model:e.model, output:e.output }); S.done++; S.running--; S.inflight[e.lane]--; S.seq += e.ms; S.cost += e.costUsd || 0; S.fams.add(family(e.model)); card(e.id, e.lane); }
+  if (e.type === "fail") { const s = S.subs[e.id]; Object.assign(s, { state:"fail", error:e.error }); S.running--; S.inflight[e.lane]--; card(e.id, e.lane); log(`<span style="color:var(--bad)">${e.id} failed on ${e.lane}</span>: ${esc(e.error)} (requeued)`); }
+  if (e.type === "synth") { $("synth").innerHTML = md(e.output); $("synthMeta").textContent = `draft ${e.round || 1} · ${e.model} · ${(e.ms / 1000).toFixed(1)}s`; log(`integrator draft <b>${e.round || 1}</b> by ${esc(e.model)}`); S.seq += e.ms; S.cost += e.costUsd || 0; }
+  if (e.type === "verify") { $("check").innerHTML = md(e.output); $("verdict").innerHTML = `<span class="pill ${e.verdict}">round ${e.round || 1} · ${e.verdict} · ${esc(e.model)}</span>`; log(`checker round ${e.round || 1}: <b>${e.verdict}</b>`); S.seq += e.ms; S.cost += e.costUsd || 0; S.fams.add(family(e.model)); }
+  if (e.type === "complete") { clearInterval(timer); stats(); $("phase").textContent = `complete · ${(e.ms / 1000).toFixed(1)}s · peak ${e.peak}`; log(`complete · lanes ${esc(JSON.stringify(e.byLane))} · verdict <b>${e.verdict}</b>`); }
+  if (e.type === "receipt") { log(`receipt <b>${esc(e.path)}</b> (${e.events} events)`); $("go").disabled = false; }
+  if (e.type === "error") { log(`<span style="color:var(--bad)">error: ${esc(e.msg)}</span>`); clearInterval(timer); $("go").disabled = false; }
+  if (e.type === "log") log(esc(e.msg));
+  stats();
+};
+$("f").onsubmit = async (ev) => { ev.preventDefault(); const r = await fetch("/run", { method:"POST", headers:{ "content-type":"application/json" }, body: JSON.stringify({ task: $("task").value, fanout: $("fan").value }) }); if (!r.ok) log(`<span style="color:var(--bad)">${esc(await r.text())}</span>`); };
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://starlightintelligence.ai/schemas/starlight.burst-receipt.v1.json",
+  "title": "starlight.burst-receipt.v1",
+  "description": "Wire contract of the Burst mission engine: the run object returned by MissionAPI.get / GET /mission/:id and every event in it. Adding a field bumps the version; consumers (starlightintelligence.ai lib/mission/engine.ts) are told before deploy. The engine's checker verdict is evidence for the Kernel, not a signature.",
+  "type": "object",
+  "required": ["id", "missionId", "mission", "team", "status", "createdAt", "events", "costUsd"],
+  "properties": {
+    "id": { "type": "string", "description": "Engine run id (Durable Object name), e.g. mc-7 or si-<uuid>." },
+    "missionId": { "type": "string", "pattern": "^M-[0-9]{8}-[a-z0-9]{6}$", "description": "Hub #351 mission id." },
+    "mission": { "type": "string", "maxLength": 2000 },
+    "swarm": { "type": ["string", "null"] },
+    "team": { "type": "array", "items": { "$ref": "#/$defs/agent" }, "maxItems": 10 },
+    "fanout": { "type": "integer", "minimum": 2, "maximum": 16 },
+    "status": { "enum": ["queued", "running", "complete", "failed"] },
+    "verdict": { "enum": ["PASS", "REVISE"] },
+    "deliverable": { "type": "string" },
+    "costUsd": { "type": "number", "minimum": 0 },
+    "createdAt": { "type": "integer" },
+    "finishedAt": { "type": "integer" },
+    "next": { "type": "integer", "description": "Pass as ?since= to fetch only newer events." },
+    "events": { "type": "array", "items": { "$ref": "#/$defs/event" } }
+  },
+  "$defs": {
+    "agent": {
+      "type": "object",
+      "required": ["id", "name", "role"],
+      "properties": { "id": { "type": "string" }, "name": { "type": "string" }, "role": { "type": "string" } }
+    },
+    "lane": { "enum": ["cloudflare", "vercel"] },
+    "event": {
+      "type": "object",
+      "required": ["type", "t"],
+      "properties": { "type": { "type": "string" }, "t": { "type": "integer" } },
+      "oneOf": [
+        { "properties": { "type": { "const": "start" } }, "required": ["missionId", "mission", "team"] },
+        { "properties": { "type": { "const": "plan" } }, "required": ["model", "subtasks"] },
+        { "properties": { "type": { "const": "admit" } }, "required": ["id", "agent", "lane", "model"] },
+        { "properties": { "type": { "const": "done" } }, "required": ["id", "agent", "lane", "ms", "model", "output"] },
+        { "properties": { "type": { "const": "fail" } }, "required": ["id", "agent", "error"] },
+        { "properties": { "type": { "const": "synth" } }, "required": ["round", "model", "ms", "output"] },
+        { "properties": { "type": { "const": "verify" } }, "required": ["round", "model", "verdict", "output"] },
+        { "properties": { "type": { "const": "error" } }, "required": ["msg"] },
+        { "properties": { "type": { "const": "receipt" } }, "required": ["schema", "missionId", "ms", "costUsd"] }
+      ]
+    }
+  }
+}

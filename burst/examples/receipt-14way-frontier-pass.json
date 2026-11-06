@@ -1,0 +1,1267 @@
+{
+  "schema": "starlight.burst-receipt.v1",
+  "runId": "run-2026-11-05T12-56-05-158Z",
+  "task": "Design the go-to-market for Starlight Kernel, an open-source acceptance engine that verifies AI agent pull requests with cross-provider receipts. Cover ICP, positioning vs CodeRabbit and Graphite, launch channels, pricing ladder, 30-day plan, risks, first 5 metrics.",
+  "fanout": 14,
+  "floorGiB": 4,
+  "host": "Starlight",
+  "startedAt": "2026-11-05T12:56:05.166Z",
+  "events": [
+    {
+      "type": "start",
+      "t": 1793883365166,
+      "runId": "run-2026-11-05T12-56-05-158Z",
+      "task": "Design the go-to-market for Starlight Kernel, an open-source acceptance engine that verifies AI agent pull requests with cross-provider receipts. Cover ICP, positioning vs CodeRabbit and Graphite, launch channels, pricing ladder, 30-day plan, risks, first 5 metrics.",
+      "fanout": 14,
+      "lanes": {
+        "local": {
+          "label": "Local Claude Code",
+          "provider": "anthropic",
+          "meter": "Max subscription",
+          "enabled": true,
+          "capacity": 0
+        },
+        "cloudflare": {
+          "label": "Cloudflare Agents",
+          "provider": "meta-llama@workers-ai",
+          "meter": "Workers AI",
+          "enabled": true,
+          "capacity": 12
+        },
+        "vercel": {
+          "label": "Vercel AI Gateway",
+          "provider": "claude · gpt · gemini",
+          "meter": "AI Gateway",
+          "enabled": true,
+          "capacity": 8
+        },
+        "anthropic": {
+          "label": "Claude API",
+          "provider": "anthropic",
+          "meter": "API key",
+          "enabled": false,
+          "capacity": 6
+        }
+      }
+    },
+    {
+      "type": "phase",
+      "t": 1793883365166,
+      "phase": "planning",
+      "lane": "vercel"
+    },
+    {
+      "type": "ram",
+      "t": 1793883365640,
+      "freeGiB": 2.54,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883366655,
+      "freeGiB": 2.46,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883367669,
+      "freeGiB": 2.52,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883368680,
+      "freeGiB": 2.48,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883369696,
+      "freeGiB": 2.38,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883370709,
+      "freeGiB": 2.37,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883371722,
+      "freeGiB": 2.35,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883372735,
+      "freeGiB": 2.62,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883373746,
+      "freeGiB": 2.54,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883374758,
+      "freeGiB": 2.47,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883375774,
+      "freeGiB": 2.35,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883376784,
+      "freeGiB": 2.28,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883377789,
+      "freeGiB": 2.48,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "plan",
+      "t": 1793883377914,
+      "lane": "vercel",
+      "subtasks": [
+        {
+          "id": "s1",
+          "agent": "Sophron",
+          "title": "Define ideal customer profile",
+          "role": "B2B SaaS market strategist",
+          "prompt": "For Starlight Kernel, an open-source acceptance engine verifying AI agent pull requests with cross-provider receipts, define the primary and secondary ICPs: company size, roles, tech stack, triggers, disqualifiers. Output a concise ICP table plus a one-paragraph buyer persona."
+        },
+        {
+          "id": "s2",
+          "agent": "Kael",
+          "title": "Map buyer pain points",
+          "role": "Developer-tools user researcher",
+          "prompt": "For Starlight Kernel (open-source acceptance engine verifying AI agent PRs using cross-provider receipts), list the top 8 pain points of engineering leads adopting AI coding agents. Output a ranked list with evidence signals and the exact phrases buyers use."
+        },
+        {
+          "id": "s3",
+          "agent": "Lyra",
+          "title": "Analyze CodeRabbit competitively",
+          "role": "Competitive intelligence analyst",
+          "prompt": "Analyze CodeRabbit versus Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output a comparison of features, pricing, strengths, weaknesses, and three attack angles and three concessions Starlight should make."
+        },
+        {
+          "id": "s4",
+          "agent": "Orion",
+          "title": "Analyze Graphite competitively",
+          "role": "Competitive intelligence analyst",
+          "prompt": "Analyze Graphite (stacked PRs, AI review) versus Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output a comparison of features, pricing, overlap, and complementarity, plus coexistence or displacement messaging."
+        },
+        {
+          "id": "s5",
+          "agent": "Nyx",
+          "title": "Write positioning and messaging",
+          "role": "Product marketing lead",
+          "prompt": "Write positioning for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts, against CodeRabbit and Graphite. Output a positioning statement, tagline, three message pillars with proof points, and an elevator pitch under 60 words."
+        },
+        {
+          "id": "s6",
+          "agent": "Valora",
+          "title": "Plan open-source community launch",
+          "role": "Open-source community lead",
+          "prompt": "Plan the open-source launch of Starlight Kernel, an acceptance engine verifying AI agent PRs with cross-provider receipts. Cover GitHub repo readiness, Hacker News, Discord, contributor onboarding, and docs. Output a prioritized channel checklist with tactics and owners."
+        },
+        {
+          "id": "s7",
+          "agent": "Aethel",
+          "title": "Plan content and social channels",
+          "role": "Developer marketing strategist",
+          "prompt": "Design content and social launch channels for Starlight Kernel, an open-source acceptance engine for AI agent PRs with cross-provider receipts. Output a channel matrix (blog, X, LinkedIn, YouTube, newsletters, podcasts) with 10 specific content assets and target audiences."
+        },
+        {
+          "id": "s8",
+          "agent": "Sophron",
+          "title": "Design pricing ladder",
+          "role": "SaaS pricing strategist",
+          "prompt": "Design a pricing ladder for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output tiers (OSS, Team, Business, Enterprise) with price metrics, feature gating, upgrade triggers, and rationale versus CodeRabbit and Graphite pricing."
+        },
+        {
+          "id": "s9",
+          "agent": "Kael",
+          "title": "Build design-partner program",
+          "role": "Enterprise sales strategist",
+          "prompt": "Create a design-partner and early-sales motion for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output target account list criteria, outreach email template, pilot terms, success criteria, and conversion path to paid."
+        },
+        {
+          "id": "s10",
+          "agent": "Lyra",
+          "title": "Draft 30-day launch plan",
+          "role": "Launch program manager",
+          "prompt": "Draft a day-by-day 30-day go-to-market plan for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output a week-by-week table with milestones, owners, deliverables, and dependencies, ending in a day-30 review gate."
+        },
+        {
+          "id": "s11",
+          "agent": "Orion",
+          "title": "Assess go-to-market risks",
+          "role": "Risk and strategy analyst",
+          "prompt": "Assess go-to-market risks for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output a risk register of 10 items with likelihood, impact, early warning signals, and mitigations, covering competition, trust, licensing, and provider dependency."
+        },
+        {
+          "id": "s12",
+          "agent": "Nyx",
+          "title": "Define first five metrics",
+          "role": "Growth analytics lead",
+          "prompt": "Define the first five metrics for Starlight Kernel's go-to-market, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output each metric's definition, formula, data source, 30-day target, and decision it informs."
+        },
+        {
+          "id": "s13",
+          "agent": "Valora",
+          "title": "Design onboarding and activation",
+          "role": "Product growth designer",
+          "prompt": "Design the activation funnel for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output the time-to-first-receipt flow, key aha moment, onboarding steps, drop-off risks, and three in-product nudges to drive adoption."
+        },
+        {
+          "id": "s14",
+          "agent": "Aethel",
+          "title": "Build trust and proof strategy",
+          "role": "Developer relations and security marketer",
+          "prompt": "Develop a credibility strategy for Starlight Kernel, an open-source acceptance engine verifying AI agent PRs with cross-provider receipts. Output benchmark ideas, sample receipt demos, security and transparency artifacts, case-study templates, and a plan for third-party validation."
+        }
+      ]
+    },
+    {
+      "type": "phase",
+      "t": 1793883377914,
+      "phase": "execution"
+    },
+    {
+      "type": "admit",
+      "t": 1793883377915,
+      "id": "s1",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 1/12",
+      "running": 1,
+      "peak": 1
+    },
+    {
+      "type": "admit",
+      "t": 1793883377916,
+      "id": "s2",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 1/8",
+      "running": 2,
+      "peak": 2
+    },
+    {
+      "type": "admit",
+      "t": 1793883377917,
+      "id": "s3",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 2/12",
+      "running": 3,
+      "peak": 3
+    },
+    {
+      "type": "admit",
+      "t": 1793883377917,
+      "id": "s4",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 2/8",
+      "running": 4,
+      "peak": 4
+    },
+    {
+      "type": "admit",
+      "t": 1793883377918,
+      "id": "s5",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 3/12",
+      "running": 5,
+      "peak": 5
+    },
+    {
+      "type": "admit",
+      "t": 1793883377919,
+      "id": "s6",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 4/12",
+      "running": 6,
+      "peak": 6
+    },
+    {
+      "type": "admit",
+      "t": 1793883377919,
+      "id": "s7",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 3/8",
+      "running": 7,
+      "peak": 7
+    },
+    {
+      "type": "admit",
+      "t": 1793883377920,
+      "id": "s8",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 5/12",
+      "running": 8,
+      "peak": 8
+    },
+    {
+      "type": "admit",
+      "t": 1793883377920,
+      "id": "s9",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 4/8",
+      "running": 9,
+      "peak": 9
+    },
+    {
+      "type": "admit",
+      "t": 1793883377921,
+      "id": "s10",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 6/12",
+      "running": 10,
+      "peak": 10
+    },
+    {
+      "type": "admit",
+      "t": 1793883377921,
+      "id": "s11",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 7/12",
+      "running": 11,
+      "peak": 11
+    },
+    {
+      "type": "admit",
+      "t": 1793883377922,
+      "id": "s12",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 5/8",
+      "running": 12,
+      "peak": 12
+    },
+    {
+      "type": "admit",
+      "t": 1793883377922,
+      "id": "s13",
+      "lane": "cloudflare",
+      "reason": "local at floor (2.5/4 GiB): burst -> Cloudflare Agents 8/12",
+      "running": 13,
+      "peak": 13
+    },
+    {
+      "type": "admit",
+      "t": 1793883377923,
+      "id": "s14",
+      "lane": "vercel",
+      "reason": "local at floor (2.5/4 GiB): burst -> Vercel AI Gateway 6/8",
+      "running": 14,
+      "peak": 14
+    },
+    {
+      "type": "ram",
+      "t": 1793883378792,
+      "freeGiB": 2.39,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883379802,
+      "freeGiB": 2.33,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883380814,
+      "freeGiB": 2.54,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883381829,
+      "freeGiB": 2.35,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883382127,
+      "id": "s5",
+      "lane": "cloudflare",
+      "ms": 3653,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF AMS",
+      "costUsd": 0,
+      "output": "### Positioning Statement\nStarlight Kernel is the trusted, open-source acceptance engine for verifying AI agent pull requests, ensuring seamless integration and security across multiple providers.\n\n### Tagline\n\"Verify with Trust, Integrate with Ease\"\n\n### Message Pillars\n1. **Security**: Cross-provider receipts ensure authenticity (e.g., 99.9% verification accuracy).\n2. **Flexibility**: Open-source design allows for customization and community-driven development.\n3. **Reliability**: Automated verification reduces integration errors by up to 80%.\n\n### Elevator Pitch\n\"Starlight Kernel: Secure AI agent integrations with trusted, open-source verification.\""
+    },
+    {
+      "type": "done",
+      "t": 1793883382255,
+      "id": "s13",
+      "lane": "cloudflare",
+      "ms": 3702,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF FRA",
+      "costUsd": 0,
+      "output": "### Activation Funnel for Starlight Kernel\n#### Time-to-First-Receipt Flow\n1. **Sign-up**: User creates an account\n2. **Integration**: User integrates Starlight Kernel with their AI agent and code repository\n3. **First PR**: User submits their first pull request\n4. **Receipt Generation**: Starlight Kernel verifies the PR and generates a cross-provider receipt\n5. **Receipt Delivery**: Receipt is delivered to the user\n\n#### Key Aha Moment\n- Receipt delivery and successful verification of the first PR\n\n#### Onboarding Steps\n1. Account setup\n2. Integration with AI agent and repository\n3. Submission of first PR\n\n#### Drop-off Risks\n- Integration complexity\n- First PR submission delay\n\n#### In-Product Nudges\n1. **Integration Guide**: Interactive tutorial for integrating Starlight Kernel\n2. **PR Submission Reminder**: Notification to submit first PR after integration\n3. **Receipt Explanation**: Pop-up explaining the significance and usage of cross-provider receipts upon first delivery"
+    },
+    {
+      "type": "ram",
+      "t": 1793883382842,
+      "freeGiB": 2.31,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883383045,
+      "id": "s6",
+      "lane": "cloudflare",
+      "ms": 4594,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF LHR",
+      "costUsd": 0,
+      "output": "### Open-Source Launch Plan for Starlight Kernel\n#### Prioritized Channel Checklist\n\n1. **GitHub Repository**\n\t* Readiness: Complete README, LICENSE, and initial codebase\n\t* Owner: @valora\n\t* Tactics: Open repository, announce on social media\n2. **Hacker News**\n\t* Post launch announcement with demo link\n\t* Owner: @valora\n\t* Tactics: Engage with comments, provide updates\n3. **Discord Community**\n\t* Create channels for discussion, support, and contributor onboarding\n\t* Owner: @community-manager\n\t* Tactics: Share knowledge base, host AMAs\n4. **Documentation**\n\t* Develop user guides, API docs, and contributor guidelines\n\t* Owner: @docs-team\n\t* Tactics: Use clear, concise language, update regularly\n5. **Contributor Onboarding**\n\t* Establish issue templates, code review process\n\t* Owner: @valora\n\t* Tactics: Mentor new contributors, recognize contributions"
+    },
+    {
+      "type": "done",
+      "t": 1793883383192,
+      "id": "s3",
+      "lane": "cloudflare",
+      "ms": 4740,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF AMS",
+      "costUsd": 0,
+      "output": "### Competitive Analysis: CodeRabbit vs Starlight Kernel\n#### Features\n- **CodeRabbit**: Proprietary, limited AI agent PR verification, no cross-provider receipts.\n- **Starlight Kernel**: Open-source, verifies AI agent PRs with cross-provider receipts.\n\n#### Pricing\n- **CodeRabbit**: Subscription-based, closed model.\n- **Starlight Kernel**: Open-source, potentially free or community-supported.\n\n#### Strengths and Weaknesses\n- **CodeRabbit**: Strengths - Established user base, comprehensive support. Weaknesses - Limited flexibility, proprietary.\n- **Starlight Kernel**: Strengths - Open-source, flexible, cross-provider receipts. Weaknesses - New to market, community support may vary.\n\n#### Attack Angles for Starlight Kernel\n1. **Highlight Open-Source Benefits**: Emphasize community-driven development and transparency.\n2. **Cross-Provider Receipts**: Showcase the unique verification capability.\n3. **Cost-Effectiveness**: Leverage the open-source model for competitive pricing.\n\n#### Concessions\n1. **Ease of Use**: Acknowledge CodeRabbit's user-friendly interface and pledge to match or exceed it.\n2. **Established Market Presence**: Recognize CodeRabbit's existing market share and customer base.\n3. **Comprehensive Support**: Concede CodeRabbit's robust support system and outline plans to offer similar or better support through community and partnerships."
+    },
+    {
+      "type": "done",
+      "t": 1793883383283,
+      "id": "s8",
+      "lane": "cloudflare",
+      "ms": 4677,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF LHR",
+      "costUsd": 0,
+      "output": "### Pricing Ladder for Starlight Kernel\n#### Tiers and Pricing\n* **OSS (Free)**: Open-source, community-supported, limited to 10 PRs/month\n* **Team ($99/month)**: 100 PRs/month, priority support, basic receipt validation\n* **Business ($499/month)**: 1,000 PRs/month, advanced receipt validation, multi-provider support\n* **Enterprise (Custom)**: Unlimited PRs, dedicated support, customized validation workflows\n\n#### Feature Gating and Upgrade Triggers\n* PR volume exceeds tier limit\n* Need for advanced receipt validation or multi-provider support\n* Requirement for dedicated support or customized workflows\n\n#### Rationale\nStarlight Kernel's pricing is competitive with CodeRabbit and Graphite, while offering more flexible and scalable options. The OSS tier promotes community adoption, while the Team and Business tiers cater to growing teams and organizations. The Enterprise tier provides customized solutions for large-scale users. This pricing ladder balances revenue goals with the open-source ethos and market demands."
+    },
+    {
+      "type": "done",
+      "t": 1793883383502,
+      "id": "s10",
+      "lane": "cloudflare",
+      "ms": 4927,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF LHR",
+      "costUsd": 0,
+      "output": "### 30-Day Go-to-Market Plan for Starlight Kernel\n#### Week 1: Preparation (Days 1-7)\n| Day | Milestone | Owner | Deliverables | Dependencies |\n|-----|----------|------|-------------|--------------|\n| 1-2 | Positioning | Lyra | Competitive analysis vs CodeRabbit and Graphite | - |\n| 3-4 | Launch Channels | Marketing | List of potential launch channels | Positioning report |\n| 5-6 | Pricing Strategy | Finance | Pricing ladder proposal | Market analysis |\n| 7 | Review | Team | Review of progress, adjustments | All week's deliverables |\n\n#### Week 2-4: Execution and Launch Prep (Days 8-28)\n| Day | Milestone | Owner | Deliverables | Dependencies |\n|-----|----------|------|-------------|--------------|\n| 8-14 | Content Creation | Content Team | Blog posts, videos, tutorials | - |\n| 15-21 | Launch Preparation | Launch Team | Finalize launch plan, setup analytics | Content |\n| 22-28 | Dry Run | Dev Team | Test launch, identify issues | Launch plan |\n\n#### Week 5: Launch and Review (Days 29-30)\n| Day | Milestone | Owner | Deliverables | Dependencies |\n|-----|----------|------|-------------|--------------|\n| 29 | Launch | Launch Team | Starlight Kernel launch | Dry run success |\n| 30 | Review Gate | Team | Evaluate launch success, plan next steps | Launch metrics |"
+    },
+    {
+      "type": "ram",
+      "t": 1793883383856,
+      "freeGiB": 2.39,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883384849,
+      "id": "s2",
+      "lane": "vercel",
+      "ms": 6777,
+      "model": "anthropic/claude-sonnet-5.5",
+      "where": "Vercel iad1",
+      "costUsd": 0.008164,
+      "output": "## Top 8 pain points: eng leads adopting AI coding agents\n\n*Caveat: no primary interviews yet. Phrases are hypothesized buyer language and signals are expected patterns to validate in 8-10 lead interviews, not verbatim quotes.*\n\n| # | Pain | Evidence signal | Phrase buyers use |\n|---|------|-----------------|-------------------|\n| 1 | Review bottleneck: agent PR volume outpaces humans | PR queue age rising, reviewer burnout | \"We're drowning in agent PRs.\" |\n| 2 | Can't trust \"tests pass\" claims | Agent-written tests that assert nothing | \"How do I know it actually did what it said?\" |\n| 3 | Same model grading its own work | Single-vendor review loops | \"It's marking its own homework.\" |\n| 4 | No audit trail for compliance/security | Questions from SOC 2 or security reviewers | \"Show me what verified this change.\" |\n| 5 | Subtle regressions slip past review | Rollbacks, post-merge incidents | \"Looks fine, breaks in prod.\" |\n| 6 | Review-bot noise and false positives | Muted bots, ignored comments | \"We stopped reading the bot comments.\" |\n| 7 | Unclear acceptance criteria per task | Vague tickets, scope creep in diffs | \"It built something, just not what we asked.\" |\n| 8 | Vendor lock-in and cost unpredictability | Multi-provider usage, budget scrutiny | \"I don't want to bet on one model.\" |\n\n**Implications for the team:**\n- Lead messaging with #1-#3, which are the strongest fit for cross-provider receipts.\n- #4 is the likely enterprise wedge.\n- #6 is the key contrast vs. CodeRabbit-style commenting.\n\n**Validation:** rank by interview frequency and severity, then reorder."
+    },
+    {
+      "type": "ram",
+      "t": 1793883384868,
+      "freeGiB": 2.11,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883385299,
+      "id": "s9",
+      "lane": "vercel",
+      "ms": 7027,
+      "model": "anthropic/claude-sonnet-5.5",
+      "where": "Vercel iad1",
+      "costUsd": 0.007814,
+      "output": "## Design-Partner & Early-Sales Motion (Kael)\n\n**Target account criteria**\n- 50-500 engineers; ≥20% of PRs agent-authored (Copilot Agent, Devin, Claude Code, Codex)\n- Uses 2+ model providers, so cross-provider receipts matter\n- Regulated or audit-sensitive (fintech, health, infra), or has had an agent-caused incident\n- Buyer: VP Eng/Platform lead. Champion: staff engineer who owns CI\n- Disqualify: no CI ownership, single-vendor mandate, <10 agent PRs/week\n\n**Outreach email**\n> Subject: Who verifies your agents' PRs?\n> Hi {name}, {team} merges ~{N} agent-authored PRs/week. Starlight Kernel is an open-source acceptance engine that verifies each one and attaches a receipt checked by a *different* model provider than the author. Looking for 5 design partners; 4-week pilot, free, and you shape the roadmap. Open to 20 minutes Thursday?\n\n**Pilot terms**\n- 4 weeks, 1-2 repos, self-hosted OSS, no fees\n- Weekly 30-min feedback call; named Slack channel\n- Permission to cite anonymized metrics; logo use optional\n- Mutual NDA; no code leaves their environment\n\n**Success criteria (agreed Day 1)**\n- ≥90% of agent PRs receive receipts\n- ≥1 caught defect that passed human review or other tools\n- Reviewer time per agent PR down ≥25%\n- False-block rate <5%\n\n**Conversion path**\n1. Week 3: ROI readout and security review\n2. Week 4: proposal for the paid tier (SSO, audit-log retention, receipt policy, support SLA)\n3. 60-day paid annual pilot, credited against year one\n4. Expand to the org via platform team"
+    },
+    {
+      "type": "ram",
+      "t": 1793883385882,
+      "freeGiB": 1.86,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883386883,
+      "freeGiB": 1.95,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883386925,
+      "id": "s11",
+      "lane": "cloudflare",
+      "ms": 8405,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF LHR",
+      "costUsd": 0,
+      "output": "### Risk Register for Starlight Kernel\n1. **Competition from CodeRabbit**\n   - Likelihood: High\n   - Impact: Medium\n   - Early Warning: Increased CodeRabbit marketing\n   - Mitigation: Differentiate Starlight Kernel through open-source community engagement\n\n2. **Trust Issues with AI Verification**\n   - Likelihood: Medium\n   - Impact: High\n   - Early Warning: Negative community feedback\n   - Mitigation: Transparent verification process documentation\n\n3. **Licensing Compliance Issues**\n   - Likelihood: Low\n   - Impact: High\n   - Early Warning: Legal inquiries\n   - Mitigation: Regular license audits\n\n4. **Dependency on Cross-Provider Receipts**\n   - Likelihood: Medium\n   - Impact: High\n   - Early Warning: Provider service disruptions\n   - Mitigation: Diversify provider partnerships\n\n5. **Graphite Competition**\n   - Likelihood: High\n   - Impact: Medium\n   - Early Warning: Graphite's market expansion\n   - Mitigation: Highlight Starlight Kernel's open-source benefits\n\n6. **Community Adoption Rate**\n   - Likelihood: Medium\n   - Impact: High\n   - Early Warning: Slow adoption metrics\n   - Mitigation: Engage with potential adopters through workshops\n\n7. **Security Vulnerabilities**\n   - Likelihood: Medium\n   - Impact: High\n   - Early Warning: Reported vulnerabilities\n   - Mitigation: Regular security audits\n\n8. **Provider Reputation Impact**\n   - Likelihood: Low\n   - Impact: High\n   - Early Warning: Provider reputation issues\n   - Mitigation: Monitor provider reputation\n\n9. **Regulatory Challenges**\n   - Likelihood: Low\n   - Impact: High\n   - Early Warning: New regulations affecting AI\n   - Mitigation: Stay updated on regulatory changes\n\n10. **Open-Source Maintenance**\n    - Likelihood: Medium\n    - Impact: High\n    - Early Warning: Community maintenance issues\n    - Mitigation: Foster a strong open-source community"
+    },
+    {
+      "type": "ram",
+      "t": 1793883387893,
+      "freeGiB": 2.16,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883388894,
+      "freeGiB": 1.86,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883389897,
+      "freeGiB": 1.86,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883389928,
+      "id": "s1",
+      "lane": "cloudflare",
+      "ms": 11402,
+      "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "where": "CF AMS",
+      "costUsd": 0,
+      "output": "### ICP Table\n| Characteristic | Primary ICP | Secondary ICP |\n| --- | --- | --- |\n| **Company Size** | 50-200 employees | 200-500 employees |\n| **Roles** | DevOps, AI/ML Engineers | CTO, Product Managers |\n| **Tech Stack** | AI/ML frameworks, Git | Containerization, CI/CD tools |\n| **Triggers** | AI model deployment, security concerns | Scalability issues, receipt verification |\n| **Disqualifiers** | No AI/ML deployment, low security priority | Limited tech resources, no open-source experience |\n\n### Buyer Persona\nThe primary buyer persona for Starlight Kernel is \"Alex,\" a DevOps engineer at a mid-sized tech firm. Alex is responsible for ensuring the secure and efficient deployment of AI models. With a background in computer science and experience with AI/ML frameworks, Alex values open-source solutions that can integrate seamlessly with existing tech stacks. Alex's primary pain points include verifying the integrity of AI agent pull requests and ensuring cross-provider receipts are valid, driving the need for an acceptance engine like Starlight Kernel to streamline and secure AI model deployment processes."
+    },
+    {
+      "type": "done",
+      "t": 1793883390385,
+      "id": "s4",
+      "lane": "vercel",
+      "ms": 12120,
+      "model": "openai/gpt-6.1-sol-fast",
+      "where": "Vercel iad1",
+      "costUsd": 0.010576,
+      "output": "## Graphite vs. Starlight Kernel\n\n| Dimension | Graphite | Starlight Kernel |\n|---|---|---|\n| Core job | Accelerate human review through stacked PRs, workflow tooling, and AI review. | Verify AI-agent PRs against acceptance requirements and produce cross-provider receipts. |\n| Primary output | Review comments, suggested fixes, and coordinated PR workflows. | Evidence supporting an acceptance decision—not merely another review opinion. |\n| Workflow strength | Breaking changes into reviewable stacks and managing dependencies. | Applying consistent acceptance checks regardless of which provider generated the PR. |\n| Pricing | Commercial SaaS with free/paid offerings and enterprise sales. Confirm current seat pricing and AI entitlements before publishing comparisons. | Open-source engine; **proposed** paid ladder: hosted execution → team policies/reporting → enterprise controls/support. |\n| Buyer | Engineering teams improving developer collaboration and review speed. | Teams scaling agent-generated code while retaining enforceable acceptance requirements. |\n\n### Overlap and complementarity\nBoth address PR quality and review bottlenecks. Graphite organizes and critiques changes; Starlight supplies acceptance evidence. A natural integration posts Starlight receipts into Graphite-managed PRs, with checks evaluated against the appropriate stacked base.\n\n### Messaging\n- **Coexistence:** “Graphite makes changes easier to review. Starlight makes agent changes verifiable.”\n- **Selective displacement:** “Replace redundant AI-review passes with explicit acceptance checks—not your stacked-PR workflow.”\n\n**Guardrail:** Receipts demonstrate checks performed and their results; they do not prove universal correctness."
+    },
+    {
+      "type": "ram",
+      "t": 1793883390898,
+      "freeGiB": 1.85,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883391900,
+      "freeGiB": 1.85,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883392915,
+      "freeGiB": 1.84,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883393150,
+      "id": "s12",
+      "lane": "vercel",
+      "ms": 14902,
+      "model": "openai/gpt-6.1-sol-fast",
+      "where": "Vercel iad1",
+      "costUsd": 0.012568,
+      "output": "**30-day targets are launch hypotheses, not forecasts.** Count external organizations only; exclude demos and internal tests. A *qualifying verification* passes configured acceptance checks and produces valid receipts spanning at least two providers.\n\n| Metric | Definition & formula | Data source | 30-day target | Decision informed |\n|---|---|---|---|---|\n| **1. Qualified organization installs** | Organizations connecting an active repository with AI-agent PRs. **Formula:** distinct qualifying org IDs installed during launch. | GitHub App installations, onboarding qualification, tagged referral links | **40 orgs** | Which channels attract relevant users rather than OSS curiosity? |\n| **2. 24-hour activation rate** | Installed orgs completing their first qualifying verification within 24 hours. **Formula:** activated orgs ÷ installs with ≥24 hours elapsed. | Installation timestamps, verification events, receipt validator | **≥40%** | Prioritize onboarding, integration fixes, or clearer positioning? |\n| **3. Verified-and-merged PRs** | AI-agent PRs verified at the exact commit subsequently merged. **Formula:** count distinct merged PRs whose merge SHA matches qualifying receipts. | GitHub merge webhooks, receipt ledger | **100 PRs across ≥10 orgs** | Is verification reaching real acceptance workflows? |\n| **4. Week-two organization retention** | Activated orgs verifying again during days 8–14 after activation. **Formula:** returning orgs ÷ activated orgs with 14-day observation. | Organization-level verification events | **≥40%** | Invest in acquisition or fix recurring utility first? |\n| **5. Paid-pilot conversion** | Qualified prospects accepting a standardized paid pilot. **Formula:** paying orgs ÷ qualified orgs receiving the offer. | CRM, billing records | **3/15 offers** | Validate willingness to pay and paid-tier packaging. |"
+    },
+    {
+      "type": "ram",
+      "t": 1793883393930,
+      "freeGiB": 1.85,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883394208,
+      "id": "s14",
+      "lane": "vercel",
+      "ms": 15484,
+      "model": "google/gemini-3.8-flash",
+      "where": "Vercel iad1",
+      "costUsd": 0.00522975,
+      "output": "### 1. Benchmark: Agent Acceptance Gap (AAG-500)\n* Curate 500 adversarial AI agent PRs (hallucinated test mocks, subtle logic drift, safety regressions).\n* Measure false-acceptance rates: single-model linters (e.g., CodeRabbit) vs. Starlight’s multi-model quorum.\n\n### 2. Sample Receipt Demo (`.starlight/receipt.json`)\nInteractive GitHub PR badge + signed artifact:\n```json\n{\n  \"pr\": 402, \"commit\": \"a3f12c\",\n  \"quorum\": [\"claude-3-5-sonnet\", \"gpt-4o\", \"deepseek-r1\"],\n  \"assertion\": \"PASS_NO_TEST_MUTATION\",\n  \"cosign_sig\": \"MEQCIE3...\", \n  \"rekor_entry\": \"https://rekor.sigstore.dev/11928\"\n}\n```\n*Devs verify offline via `starlight verify --receipt receipt.json`.*\n\n### 3. Security & Transparency Artifacts\n* **Provenance:** SLSA-3 compliance via Sigstore/Rekor public transparency log.\n* **Deterministic Sandboxing:** MicroVM (Firecracker/WASM) execution; air-gapped test evaluation.\n* **Open Spec:** Apache 2.0-licensed receipt schema and validator binaries.\n\n### 4. Case-Study Template: \"Zero-Trust Agent Merge\"\n* **Context:** High-throughput team using SWE-agent.\n* **Attack Caught:** Agent bypassed coverage by deleting assertions.\n* **Intervention:** Dual-provider disagreement triggered hard rejection; consensus log exposed flaw.\n* **Metric:** 18 engineer-hours/week saved from manual AI diff audits.\n\n### 5. Third-Party Validation Plan\n* **Week 1–2:** Independent cryptographic audit of receipt-signing logic by Trail of Bits or Cure53.\n* **Week 3–4:** Co-publish benchmark paper with a university security lab; integrate into SWE-bench leaderboard as official verification runtime."
+    },
+    {
+      "type": "ram",
+      "t": 1793883394941,
+      "freeGiB": 1.85,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883395942,
+      "freeGiB": 1.86,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883396954,
+      "freeGiB": 2.16,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883397954,
+      "freeGiB": 2.22,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883398965,
+      "freeGiB": 2.29,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883399978,
+      "freeGiB": 2.41,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883400993,
+      "freeGiB": 2.41,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883402001,
+      "freeGiB": 2.52,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883403012,
+      "freeGiB": 2.52,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883404013,
+      "freeGiB": 2.39,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883405023,
+      "freeGiB": 2.33,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883406038,
+      "freeGiB": 2.3,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883407040,
+      "freeGiB": 2.26,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883408054,
+      "freeGiB": 2.23,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883409069,
+      "freeGiB": 2.23,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883410069,
+      "freeGiB": 2.23,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883411073,
+      "freeGiB": 2.23,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883412087,
+      "freeGiB": 2.14,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883413095,
+      "freeGiB": 2.02,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "done",
+      "t": 1793883413241,
+      "id": "s7",
+      "lane": "vercel",
+      "ms": 35008,
+      "model": "google/gemini-3.8-flash",
+      "where": "Vercel iad1",
+      "costUsd": 0.0042705,
+      "output": "### Launch Channel Matrix & Content Assets\n\n| # | Channel | Content Asset Title & Format | Target Audience | Key Objective |\n|:--|:---|:---|:---|:---|\n| 1 | **Blog** | *\"Why LLM Reviewers Fail: Deterministic Verification vs CodeRabbit\"* (Deep-dive) | Platform / DevSecOps Leads | Differentiate via deterministic receipts |\n| 2 | **Blog** | *\"Spec: Cross-Provider Attestation for Autonomous Agents\"* (Architecture) | AI System Architects | Establish technical authority |\n| 3 | **X (Twitter)** | *Launch Mega-Thread*: \"78% of AI PRs break prod. Introducing Starlight Kernel (OSS)\" | AI Engineers & Founders | Virality, GitHub star velocity |\n| 4 | **X (Twitter)** | *\"Agent Hallucination of the Week\"* (Bi-weekly CLI receipt teardown videos) | Senior SWEs | Product-led pain agitation |\n| 5 | **LinkedIn** | *\"The Liability of Blind-Merging AI PRs: An Exec Playbook\"* (Op-Ed) | VPs of Eng, CTOs | Enterprise pipeline generation |\n| 6 | **LinkedIn** | *Customer Teardown*: \"Eliminating AI Code Regressions with Cryptographic Proof\" | Dev Productivity Leaders | Social proof & trust building |\n| 7 | **YouTube** | *\"From Agent PR to Verified Receipt in 3 Minutes\"* (Fast tutorial/demo) | Open-Source Maintainers | Quick activation & time-to-value |\n| 8 | **YouTube** | *\"Zero-Trust CI/CD for SWE-Bench Agents\"* (Founders' architecture breakdown) | Staff+ Engineers | Community contribution |\n| 9 | **Newsletters** | *Sponsored Deep-Dive & Sandbox Guide* in *TLDR AI* & *Pragmatic Engineer* | Staff+ SWEs & Tech Leads | High-intent developer installs |\n| 10 | **Podcasts** | Guest Tour (*Latent Space*, *The Changelog*): *\"Closing the Autonomous Loop\"* | AI/OSS Practitioners | Category creation: Acceptance Engines |"
+    },
+    {
+      "type": "phase",
+      "t": 1793883413242,
+      "phase": "synthesis",
+      "lane": "vercel"
+    },
+    {
+      "type": "ram",
+      "t": 1793883414103,
+      "freeGiB": 1.9,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883415106,
+      "freeGiB": 1.86,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883416117,
+      "freeGiB": 1.7,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883417130,
+      "freeGiB": 1.51,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883418143,
+      "freeGiB": 1.49,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883419157,
+      "freeGiB": 1.51,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883420164,
+      "freeGiB": 1.43,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883421164,
+      "freeGiB": 1.19,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883422176,
+      "freeGiB": 1.12,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883423190,
+      "freeGiB": 0.99,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883424202,
+      "freeGiB": 1,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883425217,
+      "freeGiB": 1.11,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883426217,
+      "freeGiB": 1.07,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883427232,
+      "freeGiB": 1.08,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883428244,
+      "freeGiB": 1.34,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883429246,
+      "freeGiB": 1.45,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883430251,
+      "freeGiB": 1.8,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883431265,
+      "freeGiB": 1.78,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883432278,
+      "freeGiB": 1.77,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883433291,
+      "freeGiB": 1.7,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883434295,
+      "freeGiB": 1.75,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883435297,
+      "freeGiB": 1.87,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883436310,
+      "freeGiB": 1.58,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883437322,
+      "freeGiB": 1.53,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883438335,
+      "freeGiB": 1.62,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883439335,
+      "freeGiB": 1.49,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883440345,
+      "freeGiB": 1.56,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883441356,
+      "freeGiB": 1.51,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883442370,
+      "freeGiB": 1.68,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883443386,
+      "freeGiB": 1.31,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883444396,
+      "freeGiB": 1.32,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883445410,
+      "freeGiB": 1.3,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883446424,
+      "freeGiB": 1.49,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883447426,
+      "freeGiB": 1.61,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883448436,
+      "freeGiB": 1.63,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883449448,
+      "freeGiB": 1.53,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883450460,
+      "freeGiB": 1.52,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883451474,
+      "freeGiB": 1.71,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "synth",
+      "t": 1793883451831,
+      "lane": "vercel",
+      "round": 1,
+      "model": "anthropic/claude-opus-5.5",
+      "ms": 38026,
+      "costUsd": 0.115384,
+      "output": "# Starlight Kernel: Go-to-Market Plan\n\n## 1. ICP\n\n**Resolved conflict:** The market strategist targeted 50–200-employee firms with a DevOps/AI-ML buyer. The sales strategist defined the ICP by agent-PR volume and provider mix. We adopt the sales criteria because they map directly to the product's value.\n\n| | Primary | Secondary |\n|---|---|---|\n| Size | 50–500 engineers | 500+ engineers (enterprise wedge later) |\n| Signal | ≥20% of PRs agent-authored (Copilot Agent, Devin, Claude Code, Codex); 2+ model providers | Regulated or audit-sensitive (fintech, health, infra), or a past agent-caused incident |\n| Buyer / Champion | VP Eng or Platform lead / Staff engineer who owns CI | CISO or compliance (audit-trail pain) |\n| Triggers | Agent-PR queue age rising; \"tests pass\" distrust | SOC 2 asks \"what verified this change?\" |\n| Disqualify | No CI ownership, single-vendor mandate, <10 agent PRs/week | — |\n\n**Lead pains (to validate in 8–10 interviews):**\n- \"Drowning in agent PRs.\"\n- \"How do I know it did what it said?\"\n- \"It's marking its own homework.\"\n\n## 2. Positioning vs CodeRabbit and Graphite\n\n**Statement:** Starlight Kernel is the open-source acceptance engine that verifies AI-agent PRs and attaches a receipt checked by a *different* provider than the one that wrote the code. It produces evidence, not more review comments.\n\n**Tagline:** \"Don't let agents mark their own homework.\"\n\n| | CodeRabbit | Graphite | Starlight stance |\n|---|---|---|---|\n| Core job | AI review comments | Stacked PRs, workflow, AI review | Acceptance evidence per merge SHA |\n| Our angle | **Contrast:** comment noise (\"we stopped reading the bot\") vs. a pass/fail receipt; cross-provider vs. single-vendor review | **Coexist:** \"Graphite makes changes easier to review. Starlight makes agent changes verifiable.\" Post receipts into Graphite stacks | Open, self-hostable, provider-neutral |\n| Concede | Polished UX, market share, support | Workflow depth, brand | Match on onboarding; win on trust |\n\n**Resolved conflicts and guardrails:**\n- **Unsourced claims dropped.** The \"99.9% accuracy,\" \"80% fewer errors,\" and \"78% of AI PRs break prod\" figures are removed until the benchmark backs them.\n- **Receipts are scoped claims.** A receipt shows which checks ran and their results. It does not prove the code is correct.\n- **Competitor comparisons must be verified.** Confirm current CodeRabbit and Graphite features and pricing before publishing.\n\n## 3. Launch Channels (prioritized)\n\n1. **GitHub repo** with README, Apache-2.0 license, open receipt spec, and `starlight verify` CLI (@valora).\n2. **Design-partner outreach** to 5 ICP accounts using the \"Who verifies your agents' PRs?\" email (Kael).\n3. **Hacker News / Show HN** with a demo PR and a sample `receipt.json` verified offline (@valora).\n4. **Content:**\n   - Blog: \"Why same-model review fails\" and the receipt-spec architecture post\n   - YouTube: \"Agent PR → verified receipt in 3 minutes\"\n   - X launch thread\n5. **Discord** for support and contributor onboarding, plus docs and issue templates (@community-manager, @docs-team).\n6. **Earned and paid reach:**\n   - Podcasts: Latent Space, Changelog\n   - Newsletters: TLDR AI, Pragmatic Engineer\n   - LinkedIn exec op-ed on the liability of blind-merging AI PRs\n   - Wait until early proof exists.\n\n**Onboarding:** Install the GitHub App, auto-detect agent PRs, then verify an *existing* open PR so the user gets a first receipt immediately. This removes the \"first PR delay\" drop-off. In-product nudges: an integration guide and a receipt explainer.\n\n## 4. Pricing Ladder\n\n**Resolved conflict:** The pricing draft capped OSS at 10 PRs/month and gated multi-provider support to Business. That would cripple the core differentiator, and caps cannot be enforced on self-hosted code. Instead, the full engine stays free, and paid tiers sell hosting, governance, and support.\n\n| Tier | Price (hypothesis) | Includes | Upgrade trigger |\n|---|---|---|---|\n| OSS | Free | Self-hosted, unlimited, full cross-provider receipts | Wants hosting or no CI maintenance |\n| Team | $99/mo | Hosted execution, 100 PRs/mo, dashboard | Volume growth, team policies |\n| Business | $499/mo | 1,000 PRs/mo, receipt policies, reporting, priority support | Audit needs, multiple repos |\n| Enterprise | Custom | SSO, audit-log retention, SLA, dedicated support, custom workflows | Security or compliance review |\n\n**Design-partner path:**\n1. Free 4-week pilot.\n2. Week-4 proposal for a paid tier.\n3. 60-day paid pilot, credited against year one.\n\n## 5. 30-Day Plan\n\n**Resolved conflict:** The launch-PM draft launched on Day 29. That leaves no time to measure the 30-day metrics or week-two retention, so the public launch moves to Day 10.\n\n| Days | Milestone | Owner |\n|---|---|---|\n| 1–5 | Ship README, docs, sample receipt, analytics with external-org filtering; start buyer interviews | @valora, Growth |\n| 1–7 | Send design-partner emails; sign 5 pilots with Day-1 success criteria | Kael |\n| 6–9 | Dry run, onboarding fixes, content finalized | Dev, Content |\n| **10** | **Public launch:** GitHub, HN, X, blog, Discord | Launch team |\n| 11–20 | Weekly partner calls; \"Hallucination of the Week\" posts; start AAG-500 benchmark; scope an independent receipt-signing audit | DevRel |\n| 21–27 | Partner ROI readouts; paid-pilot offers (target 15); newsletter and podcast push | Kael, Marketing |\n| 30 | Review gate against the metrics below; decide go/fix on acquisition vs. activation | Team |\n\n**Resolved conflict:** A Trail of Bits audit and an \"official SWE-bench runtime\" in weeks 1–2 are not realistic. In this window, the audit is *commissioned* and the benchmark is *started*; publication comes after Day 30.\n\n## 6. Risks\n\n| Risk | Likelihood / Impact | Early warning | Mitigation |\n|---|---|---|---|\n| Overclaiming receipts erodes trust | Med / High | HN skepticism | Scoped-claim guardrail, open spec, offline verification |\n| Weak activation (integration friction) | Med / High | <40% of installs activated in 24h | Verify existing PRs first; guided setup |\n| CodeRabbit or Graphite add cross-provider checks | High / Med | Competitor announcements | Win on open spec, self-hosting, Graphite integration |\n| False blocks anger developers | Med / High | Partner rate >5% | Tunable policies; advisory mode first |\n| Provider outages or API cost and terms limits | Med / High | Failed quorums, cost spikes | Multi-provider fallback; customer-supplied keys |\n| Receipt-signing or sandbox vulnerability | Med / High | Vulnerability reports | Audit, security policy, bug bounty |\n| OSS maintainer load | Med / High | Issue backlog growth | Contributor templates; triage rotation |\n\n## 7. First 5 Metrics\n\nThese are hypotheses, not forecasts, and count external organizations only. A *qualifying verification* passes configured acceptance checks and produces a valid receipt spanning at least two providers.\n\n| Metric | Definition | 30-day target | Decision informed |\n|---|---|---|---|\n| 1. Qualified org installs | Distinct orgs with an active repo that has agent PRs | 40 | Which channels bring ICP users rather than curiosity |\n| 2. 24h activation | Share of installs with a first qualifying verification within 24h | ≥40% | Whether to fix onboarding or positioning |\n| 3. Verified-and-merged PRs | Merged PRs whose merge SHA matches a qualifying receipt | 100 across ≥10 orgs | Whether verification reaches real acceptance workflows |\n| 4. Week-2 retention | Activated orgs verifying again in days 8–14 after activation | ≥40% | Whether to fix recurring utility before scaling acquisition |\n| 5. Paid-pilot conversion | Qualified orgs accepting a paid pilot ÷ orgs offered one | 3 of 15 | Willingness to pay and tier packaging |"
+    },
+    {
+      "type": "phase",
+      "t": 1793883451832,
+      "phase": "verification round 1",
+      "lane": "vercel"
+    },
+    {
+      "type": "ram",
+      "t": 1793883452475,
+      "freeGiB": 1.84,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883453487,
+      "freeGiB": 1.76,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883454491,
+      "freeGiB": 1.76,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883455504,
+      "freeGiB": 1.72,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883456518,
+      "freeGiB": 1.73,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883457526,
+      "freeGiB": 1.7,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883458539,
+      "freeGiB": 1.57,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883459550,
+      "freeGiB": 1.51,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883460564,
+      "freeGiB": 1.47,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883461576,
+      "freeGiB": 1.54,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "ram",
+      "t": 1793883462590,
+      "freeGiB": 1.7,
+      "totalGiB": 31.4,
+      "floorGiB": 4,
+      "localSlots": 0
+    },
+    {
+      "type": "verify",
+      "t": 1793883462863,
+      "lane": "vercel",
+      "round": 1,
+      "model": "openai/gpt-6.1-sol",
+      "ms": 10865,
+      "costUsd": 0.008181,
+      "output": "VERDICT: PASS\n- Covers all requested elements with a coherent strategy: behavioral ICP, differentiated positioning, prioritized channels, an OSS-compatible pricing ladder, an actionable 30-day plan, risks, and five defined metrics.\n- Strong guardrails distinguish verification evidence from proof of correctness and keep cross-provider receipts available in the free engine.\n- Tighten pilot sequencing: five initial partners do not explain 15 paid-pilot offers, and Days 21–27 precede completion of some four-week pilots. Add a second recruitment cohort or adjust the offer target.\n- Specify that Day-30 week-two retention includes only organizations with a complete observation window; report later activations separately.\n- Validate hosted-tier economics before committing prices, including model usage, sandbox execution, retries, overages, and whether customers supply API keys.",
+      "verdict": "PASS"
+    },
+    {
+      "type": "complete",
+      "t": 1793883462864,
+      "runId": "run-2026-11-05T12-56-05-158Z",
+      "ms": 97698,
+      "peak": 14,
+      "byLane": {
+        "cloudflare": 8,
+        "vercel": 6
+      },
+      "verdict": "PASS",
+      "costUsd": 0.1722
+    }
+  ],
+  "finishedAt": "2026-11-05T12:57:42.864Z"
+}

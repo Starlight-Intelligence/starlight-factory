@@ -1,0 +1,18 @@
+{
+  "name": "starlight-burst-agent",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "ai": { "binding": "AI" },
+  "vars": { "VERCEL_LANE_URL": "https://starlight-burst-lane.vercel.app", "MISSION_DAILY_CAP": "25" },
+  "durable_objects": {
+    "bindings": [
+      { "name": "AGENT", "class_name": "BurstAgent" },
+      { "name": "MISSION", "class_name": "MissionAgent" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["BurstAgent"] },
+    { "tag": "v2", "new_sqlite_classes": ["MissionAgent"] }
+  ],
+  "observability": { "enabled": true }
+}
